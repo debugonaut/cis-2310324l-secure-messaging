@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #f7f2ea;
+  --color-paper: #fffcf8;
+  --color-sand: #f1e9df;
+  --color-ink: #241914;
+  --color-ink-soft: #78675b;
+  --color-brown: #895735;
+  --color-brown-dark: #704326;
+  --color-line: #e7dace;
+  --color-line-soft: #efe5da;
+  --color-success: #287a45;
+  --color-success-soft: #e9f2ec;
+  --color-danger: #b84035;
+  --color-danger-soft: #f8ebe9;
+  --color-muted: #a99a8d;
+
+  --font-sans: "Google Sans", "Google Sans Text", "Product Sans", "Inter", ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-card: 14px;
+  --shadow-soft: 0 1px 2px rgba(36, 25, 20, 0.04), 0 18px 40px -32px rgba(36, 25, 20, 0.35);
+  --shadow-lift: 0 2px 4px rgba(36, 25, 20, 0.04), 0 24px 60px -30px rgba(36, 25, 20, 0.28);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  ::selection {
+    background: #e8d6c3;
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brown);
+    outline-offset: 2px;
+  }
+
+  textarea,
+  input {
+    font-family: inherit;
+  }
+}
+
+@utility tech {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+}
+
+@utility eyebrow {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+@utility card {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-line);
+  background-color: var(--color-paper);
+}
+
+@utility card-soft {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-line-soft);
+  background-color: var(--color-sand);
+}
+
+@utility hairline {
+  height: 1px;
+  width: 100%;
+  background-color: var(--color-line);
+}
+
+.shell {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .shell {
+    padding-inline: 2rem;
+  }
+}
+
+/* thin, unobtrusive scrollbars inside conversation panes */
+.scroll-slim {
+  scrollbar-width: thin;
+  scrollbar-color: #ddcdbd transparent;
+}
+.scroll-slim::-webkit-scrollbar {
+  width: 8px;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: #ddcdbd;
+  border-radius: 999px;
+}
+.scroll-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  /* Keep colour/opacity feedback; only travel and looping motion are suppressed
+     inside the components that own them (Framer + GSAP checks). */
+  .animate-pulse,
+  .animate-ping {
+    animation: none !important;
+  }
+}
