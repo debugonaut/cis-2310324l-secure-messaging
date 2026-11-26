@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from "framer-motion";
-import { Check, ChevronDown, Copy, Loader2, ShieldCheck } from "lucide-react";
+import { Check, ChevronDown, Copy, Loader2, RotateCcw, ShieldCheck } from "lucide-react";
 import {
   useEffect,
   useRef,
@@ -219,6 +219,23 @@ export function Brand({ className }: { className?: string }) {
       </span>
       <span className="text-[17px] font-medium tracking-[-0.01em] text-ink">Secure Messaging</span>
     </span>
+  );
+}
+
+export function ResetButton({ onReset, className }: { onReset: () => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onReset}
+      aria-label="Reset everything and start over"
+      title="Reset everything and start over"
+      className={cx(
+        "grid min-h-8 min-w-8 place-items-center rounded-[9px] border border-line bg-paper text-ink-soft transition hover:border-brown/30 hover:bg-sand/60 hover:text-ink",
+        className,
+      )}
+    >
+      <RotateCcw size={15} strokeWidth={1.8} aria-hidden="true" />
+    </button>
   );
 }
 

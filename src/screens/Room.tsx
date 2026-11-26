@@ -3,7 +3,7 @@ import { ArrowRight, ArrowUpRight, Lock, RotateCcw, ShieldAlert } from "lucide-r
 import { useMemo, useState } from "react";
 import { useRoute } from "../lib/router";
 import { useSession, type Message } from "../lib/session";
-import { Badge, Brand, Button, Card, ConnectionDot, Eyebrow, Spinner, TextArea, cx } from "../components/ui";
+import { Badge, Brand, Button, Card, ConnectionDot, Eyebrow, ResetButton, Spinner, TextArea, cx } from "../components/ui";
 
 export default function Room() {
   const { session, keys, connection, peerName, peerOnline, keyState, leaveRoom } = useSession();
@@ -51,6 +51,12 @@ export default function Room() {
             >
               Leave
             </button>
+            <ResetButton
+              onReset={() => {
+                leaveRoom();
+                navigate("/", { replace: true });
+              }}
+            />
           </div>
         </div>
       </div>

@@ -373,17 +373,41 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const leaveRoom = useCallback(() => {
     window.sessionStorage.removeItem(STORAGE_KEY);
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore storage access restrictions */
+    }
+    if (retryRef.current) {
+      window.clearTimeout(retryRef.current);
+      retryRef.current = null;
+    }
+    if (heartbeatRef.current) {
+      window.clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+    }
+    const socket = socketRef.current;
+    socketRef.current = null;
+    if (socket && socket.readyState <= WebSocket.OPEN) socket.close();
+
     sessionRef.current = null;
+    keysRef.current = null;
+    messagesRef.current = [];
+    tamperRef.current = false;
+    acceptedRef.current = { alice: [], bob: [] };
+    verifiedChecksRef.current.clear();
+    seqRef.current = { alice: 1, bob: 1 };
+
     setSession(null);
     setParticipants([]);
+    setConnection("idle");
+    setRoomError(null);
     setMessages([]);
     setKeys(null);
     setKeyState("idle");
+    setKeyError(null);
     setPipeline(null);
     setTamperNextState(false);
-    acceptedRef.current = { alice: [], bob: [] };
-    verifiedChecksRef.current.clear();
-    socketRef.current?.close();
   }, []);
 
   const resetSession = useCallback(() => {

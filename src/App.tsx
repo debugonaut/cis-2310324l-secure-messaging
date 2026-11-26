@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { SessionProvider, useSession } from "./lib/session";
 import { useRoute } from "./lib/router";
-import { Brand } from "./components/ui";
+import { Brand, ResetButton } from "./components/ui";
 import Landing from "./screens/Landing";
 import CreateRoom from "./screens/CreateRoom";
 import JoinRoom from "./screens/JoinRoom";
@@ -22,7 +22,7 @@ export default function App() {
 
 function Shell() {
   const { path, parts, navigate } = useRoute();
-  const { pipeline } = useSession();
+  const { pipeline, leaveRoom } = useSession();
   const inRoom = parts[0] === "room";
   const showChrome = !inRoom;
 
@@ -35,6 +35,12 @@ function Shell() {
     window.setTimeout(() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" }), 90);
   };
 
+  const resetAll = () => {
+    leaveRoom();
+    navigate("/", { replace: true });
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+
   return (
     <div className="min-h-screen bg-cream">
       {showChrome ? (
@@ -44,7 +50,7 @@ function Shell() {
               <Brand />
             </button>
 
-            <nav className="hidden items-center gap-7 text-[15px] text-ink-soft sm:flex">
+            <nav aria-label="Primary" className="hidden items-center gap-7 text-[15px] text-ink-soft sm:flex">
               <button type="button" onClick={() => navigate("/how")} className="transition hover:text-ink">
                 How it works
               </button>
@@ -53,7 +59,12 @@ function Shell() {
               </button>
             </nav>
 
-            <p className="text-[12px] uppercase tracking-[0.16em] text-muted">CIS Lab · Practical 03 + 08</p>
+            <div className="flex items-center gap-3">
+              <p className="hidden text-[12px] uppercase tracking-[0.16em] text-muted sm:block">
+                CIS Lab · Practical 03 + 08
+              </p>
+              <ResetButton onReset={resetAll} />
+            </div>
           </div>
         </header>
       ) : null}
