@@ -23,6 +23,7 @@ export default function ReceiverPipeline({ messageId }: { messageId: string }) {
   const { messages, session, keys, verifyIncoming, replayCheck, decryptIncoming, closePipeline } = useSession();
   const message = messages.find((m) => m.id === messageId);
   const [step, setStep] = useState(0);
+  const [maxUnlocked, setMaxUnlocked] = useState(0);
   const [replay, setReplay] = useState<ReplayCheck | null>(null);
   const [checking, setChecking] = useState(false);
   const [decrypting, setDecrypting] = useState(false);
@@ -79,8 +80,12 @@ export default function ReceiverPipeline({ messageId }: { messageId: string }) {
   const canAdvance =
     step === 0 ? true : step === 1 ? Boolean(check) : step === 2 ? Boolean(check?.valid) : step === 3 ? replayFresh === true : false;
 
+  const stepCeiling = Math.max(maxUnlocked, canAdvance ? step + 1 : step);
+  const blockedSteps = STEPS.map((_, index) => index).filter((index) => index > stepCeiling);
+
   const goTo = (index: number) => {
-    if (index > step && !canAdvance) return;
+    if (index > stepCeiling) return;
+    if (index > maxUnlocked) setMaxUnlocked(index);
     setStep(index);
   };
 
@@ -94,6 +99,7 @@ export default function ReceiverPipeline({ messageId }: { messageId: string }) {
       onStep={goTo}
       onExit={closePipeline}
       canAdvance={canAdvance}
+      blocked={blockedSteps}
       lastLabel="Done"
       autoDelay={4400}
     >

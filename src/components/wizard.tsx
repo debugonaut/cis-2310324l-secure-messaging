@@ -25,6 +25,7 @@ export function WizardFrame({
   onExit,
   children,
   canAdvance = true,
+  blocked,
   lastLabel,
   onLast,
   autoDelay = 4200,
@@ -38,6 +39,7 @@ export function WizardFrame({
   onExit: () => void;
   children: ReactNode;
   canAdvance?: boolean;
+  blocked?: number[];
   lastLabel?: string;
   onLast?: () => void;
   autoDelay?: number;
@@ -89,7 +91,7 @@ export function WizardFrame({
         <h1 className="mt-2.5 text-[30px] font-normal tracking-[-0.03em] text-ink sm:text-[34px]">{title}</h1>
 
         <div className="mt-7">
-          <Stepper steps={steps} current={step} onSelect={(index) => onStep(index)} />
+          <Stepper steps={steps} current={step} onSelect={(index) => onStep(index)} blocked={blocked} />
         </div>
 
         <div className="card mt-5 min-h-[380px] px-5 py-6 shadow-[var(--shadow-soft)] sm:px-8 sm:py-8">

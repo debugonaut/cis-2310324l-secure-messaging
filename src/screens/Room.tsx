@@ -196,12 +196,13 @@ function SenderDesk() {
             </label>
             <button
               type="button"
+              disabled={!lastOwn || !peerOnline}
               onClick={() => {
-                replayLast();
+                if (!replayLast()) return;
                 setReplayed(true);
                 window.setTimeout(() => setReplayed(false), 2000);
               }}
-              className="inline-flex items-center gap-1.5 text-[14px] text-ink-soft transition hover:text-ink"
+              className="inline-flex items-center gap-1.5 text-[14px] text-ink-soft transition hover:text-ink disabled:cursor-not-allowed disabled:opacity-45"
             >
               <RotateCcw size={12} /> Replay last
             </button>
@@ -304,6 +305,9 @@ function ReceiverDesk() {
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder="Reply"
+                onKeyDown={(event) => {
+                  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") void handleReply();
+                }}
               />
             </div>
             <div className="flex items-center justify-end px-4 pb-3.5 pt-1">

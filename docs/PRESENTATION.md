@@ -59,9 +59,9 @@ This document is structured **slide-by-slide**. Use it to build a PowerPoint/Goo
 ```
 [ Alice's Browser ]                    [ Relay Server ]                   [ Bob's Browser ]
                                          (server.ts)
-  Passphrase ──→ PBKDF2 ──→ HKDF                                         Passphrase ──→ PBKDF2 ──→ HKDF
-                              ├─ K_enc                                                    ├─ K_enc
-                              └─ K_mac                                                    └─ K_mac
+  Passphrase ──→ PBKDF2 (512 bits)                                       Passphrase ──→ PBKDF2 (512 bits)
+                     ├─ K_enc (256-bit)                                                     ├─ K_enc (256-bit)
+                     └─ K_mac (256-bit)                                                     └─ K_mac (256-bit)
 
   Plaintext
      ↓ AES-256-CBC (K_enc, fresh IV)
@@ -69,7 +69,7 @@ This document is structured **slide-by-slide**. Use it to build a PowerPoint/Goo
      ↓ HMAC-SHA256 (K_mac, VERSION‖SEQ‖IV‖CT)
   Envelope ──────────────────────────────────────────────────────────────→ Envelope
                                                                               ↓ Verify HMAC (K_mac) ← BEFORE decrypt
-                                                                              ↓ Check SEQ (replay?)
+                                                                              ↓ Check SEQ ledger (replay?)
                                                                               ↓ AES-256-CBC decrypt (K_enc)
                                                                            Plaintext
 ```
@@ -98,7 +98,7 @@ This document is structured **slide-by-slide**. Use it to build a PowerPoint/Goo
 
 **What we use:**
 - `crypto.subtle.encrypt({ name: "AES-CBC", iv }, encKey, plaintext)`
-- Key: `K_enc` — 256-bit, derived from the shared passphrase via PBKDF2 + HKDF
+- Key: `K_enc` — first 256 bits of the 512-bit PBKDF2-HMAC-SHA256 key derivation output
 - IV: 128-bit random value from `crypto.getRandomValues()` — different every message
 
 **Visual suggestion:** A 3-block CBC diagram showing XOR with previous ciphertext block before the AES round.
@@ -137,23 +137,24 @@ MAC tag   = HMAC-SHA256(K_mac, MAC input)   →   32-byte tag
 
 ---
 
-## Slide 7 — Key Derivation (PBKDF2 + HKDF)
+## Slide 7 — Key Derivation (PBKDF2-HMAC-SHA256)
 
 **Heading:** From Passphrase to Two Independent Keys
 
-**Step 1 — PBKDF2** (Password-Based Key Derivation Function 2):
-- Input: shared passphrase + 128-bit random salt (stored in room metadata)
-- Hash: SHA-256, **210,000 iterations** (OWASP 2024 recommendation)
-- Output: 256-bit master key material
-- Purpose: makes brute-force attacks computationally expensive
+**Step 1 — Passphrase Normalization & PBKDF2** (Password-Based Key Derivation Function 2):
+- Input: NFKC-normalized passphrase + 128-bit random salt (generated per room by the relay)
+- Hash: `SHA-256`, **210,000 iterations** (OWASP recommended work factor)
+- Output: **512 bits** of stretched pseudo-random key material (`crypto.subtle.deriveBits`)
+- Purpose: makes offline brute-force / dictionary guessing computationally expensive
 
-**Step 2 — HKDF** (HMAC-based Key Derivation Function):
-- Splits the master key into two **domain-separated** keys:
-  - `K_enc = HKDF-SHA256(master, info="aes-cbc-enc")`
-  - `K_mac = HKDF-SHA256(master, info="hmac-sha256-mac")`
-- Domain separation ensures K_enc and K_mac are **cryptographically independent** — compromising one does not compromise the other
+**Step 2 — Splitting 512 bits into two independent 256-bit keys**:
+- First 32 bytes (256 bits) → `K_enc` (imported non-extractable for `AES-CBC`)
+- Last 32 bytes (256 bits) → `K_mac` (imported non-extractable for `HMAC-SHA256`)
+- Separating keys ensures encryption and authentication never share raw key bytes
 
-**Security note:** Both peers derive the **same** keys from the same passphrase + same salt (salt is stored in the room on the relay). No key exchange protocol needed.
+**Fingerprint verification:**
+- UI computes `SHA-256(K_enc ‖ K_mac)` (first 8 bytes formatted as uppercase hex blocks)
+- Both peers can visually compare fingerprints before chatting — if passphrases differ, fingerprints differ too!
 
 ---
 
@@ -177,7 +178,7 @@ MAC tag   = HMAC-SHA256(K_mac, MAC input)   →   32-byte tag
 Receiver:
 4. tag' = HMAC-SHA256(K_mac, VERSION ‖ SEQ ‖ IV ‖ ct)
 5. if tag ≠ tag' → REJECT (never reach step 6)
-6. check SEQ ≥ last_accepted + 1 → REJECT if stale
+6. check SEQ not already in accepted ledger → REJECT if duplicate
 7. plaintext = AES-256-CBC-decrypt(K_enc, IV, ct)
 ```
 
@@ -209,18 +210,18 @@ Receiver:
 **Heading:** Demo — Man-in-the-Middle Tamper
 
 **Demo script:**
-1. Alice ticks **Tamper** toggle in Room screen
+1. Alice opens the **Attack** drawer in the Room screen and ticks **Tamper next message**
 2. Alice types and sends a message
-3. Walk through Sender Pipeline — note ciphertext flipped by 1 bit
-4. Bob's Receiver Pipeline → "Compare" step → **tag mismatch** → "Authentication Failed"
-5. Message is marked **Rejected** — plaintext never shown
+3. Step through Sender Pipeline — `transmit()` flips 1 bit in the middle of the ciphertext (`flipCiphertextBit`)
+4. Bob opens **Start decryption** → Steps 1–2 (`Bob's seal` → `Compare`) → **tag mismatch** (`The two seals are different`) → cannot advance past Step 2
+5. Back in the room, message is marked **Rejected** (`Authentication failed`) — AES decryption never ran
 
 **What to explain:**
-- The relay could have done this — it sees the ciphertext
-- Because we use HMAC over the full envelope, any modification of any byte (ciphertext, IV, SEQ, VERSION) changes the tag
-- EtM means the receiver caught the attack **before attempting decryption**, preventing padding-oracle attacks
+- Even a passive/active relay can flip ciphertext bits because it sees `{ ivB64, ctB64 }`
+- Because we compute `HMAC-SHA256` over `VERSION ‖ SEQ ‖ IV ‖ CIPHERTEXT`, modifying *any* field alters the recomputed tag cleanly
+- Encrypt-then-MAC rejects at the MAC gate **before** touching AES decryption or PKCS#7 padding (preventing padding-oracle attacks)
 
-**Show:** The hex diff — `Computed tag ≠ Received tag`, differing bits count
+**Show:** The `Details` drawer on Step 2 — `Received` vs `Recomputed` hex and differing bit count (~50% of 256 bits due to SHA-256 avalanche effect)
 
 ---
 
@@ -229,22 +230,22 @@ Receiver:
 **Heading:** Demo — Replay Attack Detection
 
 **Demo script:**
-1. Alice sends a normal message → Bob accepts it (seq = 1)
-2. Alice clicks **Replay Last** in the Room screen
-3. The old envelope with `seq = 1` is re-transmitted
-4. Bob's receiver checks sequence ledger: `1 ≤ last_accepted (1)` → **Replay detected**
-5. Message rejected before even checking the MAC
+1. Alice sends a normal message → Bob accepts and decrypts it (`#001`)
+2. Alice opens **Attack** and clicks **Replay last**
+3. The exact previous envelope (`seq = 1`, intact ciphertext & intact MAC) is re-sent through the relay
+4. Bob opens **Start decryption** → Step 2 **Compare** passes (because the envelope is genuinely from Alice and unmodified!)
+5. At Step 3 **Ledger**, Bob checks `accepted.includes(1)` → **duplicate found** (`This number is already in the ledger`) → Step 4 **Open** is blocked and message shows **Replay detected** (`Rejected`)
 
 **What to explain:**
-- The sequence number is included in the MAC input, so an attacker cannot change it without breaking the tag
-- The receiver keeps a monotonically increasing expected sequence number
-- This prevents replay, reflection, and re-ordering attacks
+- Even an authentic, unmodified envelope with a valid HMAC must be blocked if an attacker captures and re-sends it
+- Encrypt-then-MAC verifies authenticity **first** (so attackers cannot forge fake sequence numbers to pollute state), and the sequence ledger catches genuine replayed envelopes second
+- Sequence numbers are bound inside `macInput`, so an attacker cannot bump `seq` to bypass the ledger without invalidating the HMAC tag
 
 ---
 
 ## Slide 12 — How It Works Page
 
-**Heading:** Educational Reference — `/how`
+**Heading:** Educational Reference — `/#/how`
 
 The app includes a dedicated `/how` page for the examiner:
 - **AES-256-CBC** section — bullet points + simple flow diagram
@@ -263,11 +264,11 @@ Point the examiner to this page and walk through it briefly before the live demo
 | Point | Evidence |
 |---|---|
 | Uses real Web Crypto API | `crypto.subtle.encrypt`, `crypto.subtle.sign` — no polyfill or toy implementation |
-| AES-256 key size | `length: 256` in `generateKey` / HKDF derivation |
+| AES-256 key size | First 32 bytes (256 bits) of 512-bit PBKDF2 output imported as AES-CBC `CryptoKey` |
 | PKCS#7 padding handled by browser | Web Crypto applies and strips padding automatically |
 | Constant-time tag comparison | Manual byte-by-byte XOR accumulator — prevents timing attacks |
 | Fresh IV per message | `crypto.getRandomValues(new Uint8Array(16))` before every `encrypt` |
-| PBKDF2 iterations | 210,000 — OWASP 2024 minimum for SHA-256 |
+| PBKDF2 iterations | 210,000 iterations with 128-bit per-room random salt |
 | No plaintext on relay | Relay only receives `{ v, seq, ivB64, ctB64, macB64 }` |
 
 ---
@@ -284,7 +285,7 @@ Point the examiner to this page and walk through it briefly before the live demo
 **Security properties achieved:**
 - ✅ Confidentiality (AES-256-CBC)
 - ✅ Integrity & Authenticity (HMAC-SHA256)
-- ✅ Replay Protection (sequence counter in MAC input)
+- ✅ Replay Protection (sequence counter in MAC input + per-sender ledger)
 - ✅ Brute-force Resistance (PBKDF2 × 210,000)
 - ✅ Padding-oracle Prevention (EtM ordering)
 - ✅ No server-side secrets (zero-knowledge relay)
@@ -297,14 +298,14 @@ Point the examiner to this page and walk through it briefly before the live demo
 
 | File | What it does |
 |---|---|
-| `src/lib/crypto.ts` | All crypto: AES-CBC, HMAC, PBKDF2, HKDF, constant-time compare, bit-flip helpers |
+| `src/lib/crypto.ts` | All crypto: AES-256-CBC, HMAC-SHA256, PBKDF2 512-bit split, constant-time compare, bit-flip helpers |
 | `src/lib/session.tsx` | Room/session state, WebSocket, message lifecycle, tamper/replay controls |
 | `src/screens/SenderPipeline.tsx` | 5-step animated sender walkthrough |
 | `src/screens/ReceiverPipeline.tsx` | 5-step animated receiver walkthrough (verify → replay → decrypt) |
 | `src/screens/HowItWorks.tsx` | Educational explainer page |
-| `src/screens/Room.tsx` | Main chat UI with tamper toggle and replay button |
-| `src/components/step-animations.tsx` | Per-step SVG + Framer Motion animations |
-| `server.ts` | Relay: HTTP room API + WebSocket message routing (Bun) |
+| `src/screens/Room.tsx` | Main chat UI with Attack drawer (`Tamper next message`, `Replay last`) |
+| `src/components/step-animations.tsx` | Per-step SVG + GSAP animations |
+| `server.ts` | Relay: HTTP room API + WebSocket message routing (Node.js & Bun) |
 
 ## Appendix B — Glossary
 
@@ -316,10 +317,9 @@ Point the examiner to this page and walk through it briefly before the live demo
 | **IV** | Initialisation Vector — random 128-bit value that starts the CBC chain |
 | **HMAC** | Hash-based Message Authentication Code — keyed hash using SHA-256 (RFC 2104) |
 | **EtM** | Encrypt-then-MAC — MAC the ciphertext, not the plaintext; verify before decryption |
-| **PBKDF2** | Password-Based Key Derivation Function 2 — slows brute-force with many iterations |
-| **HKDF** | HMAC-based Key Derivation Function — splits master key into domain-separated keys |
-| **K_enc** | Encryption key derived via HKDF with info `"aes-cbc-enc"` |
-| **K_mac** | Authentication key derived via HKDF with info `"hmac-sha256-mac"` |
+| **PBKDF2** | Password-Based Key Derivation Function 2 — slows brute-force with 210,000 SHA-256 iterations |
+| **K_enc** | Encryption key — first 32 bytes (256 bits) of PBKDF2 output, non-extractable AES-CBC key |
+| **K_mac** | Authentication key — last 32 bytes (256 bits) of PBKDF2 output, non-extractable HMAC key |
 | **SEQ** | Sequence number — monotonically increasing counter included in MAC input |
 | **Relay** | The server — only routes ciphertexts; never sees passphrase or plaintext |
 | **Constant-time compare** | Bit-by-bit XOR accumulator that prevents timing attacks on MAC comparison |

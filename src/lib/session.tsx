@@ -123,7 +123,7 @@ const STORAGE_KEY = "sms.room.v2";
 
 function readStored(): StoredSession | null {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as StoredSession;
     if (!parsed.roomId || !parsed.salt || !parsed.role) return null;
@@ -159,6 +159,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const messagesRef = useRef<Message[]>([]);
   const keysRef = useRef<SessionKeys | null>(null);
   const acceptedRef = useRef<AcceptedMap>({ alice: [], bob: [] });
+  const verifiedChecksRef = useRef<Map<string, MacCheck>>(new Map());
   const seqRef = useRef<Record<Role, number>>({ alice: 1, bob: 1 });
   const tamperRef = useRef(false);
   const sessionRef = useRef<StoredSession | null>(session);
@@ -251,10 +252,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       }
 
       switch (msg.t) {
-        case "joined":
-          setParticipants(Array.isArray(msg.participants) ? (msg.participants as Participant[]) : []);
+        case "joined": {
+          const roomParticipants = (msg.room as { participants?: Participant[] } | undefined)?.participants;
+          const list = Array.isArray(msg.participants)
+            ? (msg.participants as Participant[])
+            : Array.isArray(roomParticipants)
+              ? roomParticipants
+              : [];
+          setParticipants(list);
           setRoomError(null);
           break;
+        }
         case "presence":
           setParticipants(Array.isArray(msg.participants) ? (msg.participants as Participant[]) : []);
           break;
@@ -330,7 +338,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const adoptRoom = useCallback((room: RoomInfo, role: Role, name: string) => {
     const next: StoredSession = { roomId: room.id, salt: room.salt, role, name };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     setSession(next);
     setSessionMeta(next);
     setRoomError(null);
@@ -344,6 +352,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setKeyState("idle");
     setKeyError(null);
     acceptedRef.current = { alice: [], bob: [] };
+    verifiedChecksRef.current.clear();
     seqRef.current = { alice: 1, bob: 1 };
   };
 
@@ -363,7 +372,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [adoptRoom]);
 
   const leaveRoom = useCallback(() => {
-    window.localStorage.removeItem(STORAGE_KEY);
+    window.sessionStorage.removeItem(STORAGE_KEY);
     sessionRef.current = null;
     setSession(null);
     setParticipants([]);
@@ -372,12 +381,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setKeyState("idle");
     setPipeline(null);
     setTamperNextState(false);
+    acceptedRef.current = { alice: [], bob: [] };
+    verifiedChecksRef.current.clear();
     socketRef.current?.close();
   }, []);
 
   const resetSession = useCallback(() => {
     setMessages([]);
     acceptedRef.current = { alice: [], bob: [] };
+    verifiedChecksRef.current.clear();
     seqRef.current = { alice: 1, bob: 1 };
     setPipeline(null);
   }, []);
@@ -498,6 +510,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (!message || !message.envelope || !activeKeys) return null;
 
     const check = await verifyMac(message.envelope, activeKeys);
+    verifiedChecksRef.current.set(messageId, check);
     patchMessage(messageId, {
       check,
       ...(check.valid
@@ -528,8 +541,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       const activeKeys = keysRef.current;
       if (!message || !message.envelope || !activeKeys) return { ok: false };
 
-      if (message.check && !message.check.valid) {
-        return { ok: false, failure: { stage: "mac", detail: "Refused to decrypt: authentication failed." } };
+      const check = message.check ?? verifiedChecksRef.current.get(messageId);
+      if (!check || !check.valid) {
+        return { ok: false, failure: { stage: "mac", detail: "Refused to decrypt: MAC verification has not passed." } };
       }
       const accepted = acceptedRef.current[message.from] ?? [];
       if (accepted.includes(message.seq)) {

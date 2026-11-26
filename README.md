@@ -48,38 +48,40 @@ the receiver verifies the HMAC tag *before* decryption, preventing padding-oracl
 ## Features
 
 ### 🔐 Real-time Secure Room
-- Create or join a named **Room** (6-character code)
-- Enter a shared passphrase → keys derived via **PBKDF2-HMAC-SHA256** (210,000 iterations, 128-bit salt) → split into two independent keys via **HKDF-SHA256**: `K_enc` (encryption) and `K_mac` (authentication)
-- Domain separation ensures the encryption key and the MAC key are cryptographically independent
+- Create or join a named **Room** (6-character invite code + random 128-bit salt)
+- Enter a shared passphrase → `PBKDF2-HMAC-SHA256` (210,000 iterations, NFKC-normalized passphrase, 128-bit salt) derives **512 bits**, split into two independent 256-bit non-extractable keys: `K_enc` (first 32 bytes, `AES-CBC`) and `K_mac` (last 32 bytes, `HMAC-SHA256`)
+- Each peer displays the same derived key **Fingerprint** (`SHA-256` prefix) for visual verification without exposing key material
 
 ### 📤 Sender Pipeline (5 animated steps)
 Step-through modal that shows, in real time:
 1. **Note** — the plaintext you typed
-2. **Two Keys** — PBKDF2 → HKDF derivation diagram (key material, salt, iterations)
-3. **Press** — AES-256-CBC encryption with fresh random IV; ciphertext in hex
-4. **Seal** — HMAC-SHA256 tag over `VERSION ‖ SEQ ‖ IV ‖ CIPHERTEXT`; MAC input in hex
-5. **Send** — envelope transmitted to relay; zero plaintext on the wire
+2. **Two keys** — `PBKDF2` passphrase stretching diagram into `K_enc` and `K_mac` + fingerprint
+3. **Press** — `AES-256-CBC` encryption with fresh random 128-bit IV & `PKCS#7` padding; ciphertext blocks in hex
+4. **Seal** — `HMAC-SHA256` tag over `VERSION ‖ SEQ ‖ IV ‖ CIPHERTEXT`; MAC input and tag in hex
+5. **Send** — envelope transmitted to the relay; zero plaintext on the wire
 
 ### 📥 Receiver Pipeline (5 animated steps)
-Step-through modal showing:
-1. **Parcel** — raw envelope (IV hex, ciphertext hex, MAC hex)
-2. **Bob's Seal** — receiver recomputes HMAC independently
-3. **Compare** — constant-time tag comparison; any tampered bit = **Authentication Failed**
-4. **Ledger** — sequence-number replay check
-5. **Open** — AES-CBC decryption and PKCS#7 unpadding; plaintext revealed
+Step-through modal enforcing Encrypt-then-MAC ordering:
+1. **Parcel** — raw envelope metadata (`IV`, `Ciphertext`, `Seq`, `Tag`)
+2. **Bob's seal** — receiver independently recomputes `HMAC-SHA256` with `K_mac`
+3. **Compare** — constant-time byte-by-byte XOR tag comparison; any modified bit = **Rejected** (`The two seals are different`) before touching the cipher
+4. **Ledger** — sequence-number replay check against previously accepted envelopes
+5. **Open** — `AES-256-CBC` decryption and `PKCS#7` unpadding; plaintext revealed
+
+*(Or click **Quick verify** / **Decrypt** directly inside the Room after key establishment.)*
 
 ### ⚔️ MITM Tamper Lab
-From the Room screen, the sender can enable **Tamper mode** before transmitting — this flips a bit in the ciphertext, letting you watch the receiver reject the envelope in real time with a "Authentication Failed" badge. The message is **never** decrypted after a failed MAC.
+From the Room screen, open **Attack** and check **Tamper next message** before sending — this flips a bit in the transmitted ciphertext (`flipCiphertextBit`), letting you watch the receiver reject the envelope with **Authentication failed** (`Rejected`). AES decryption is strictly blocked whenever MAC verification fails.
 
 ### 🔄 Replay Attack Detection
-The receiver maintains a sequence-number ledger. Re-sending a previously transmitted envelope triggers "Replay detected" before even checking the MAC.
+The receiver maintains a per-sender ledger of accepted sequence numbers. Clicking **Replay last** in Alice's **Attack** drawer re-transmits a previously sent envelope through the relay; after authenticating the envelope, Bob's ledger sees the duplicate sequence number and rejects it with **Replay detected** (`This number is already in the ledger`).
 
 ### 📖 How It Works — Educational Page
-A standalone `/how` page that explains:
-- AES-256-CBC (what a block cipher is, what CBC mode does, what PKCS#7 padding is)
-- HMAC-SHA256 (why encryption alone is insufficient, what a keyed MAC provides)
+A standalone `/#/how` page (`How it works` / `About the project`) that explains:
+- `AES-256-CBC` (block cipher, CBC chaining, non-secret IV, PKCS#7 padding)
+- `HMAC-SHA256` (keyed SHA-256 tag, why encryption alone does not prevent tampering, separate derived keys)
 - The full 9-step end-to-end workflow
-- An Encrypt-then-MAC composition diagram
+- Alice → Relay → Bob architecture & project scope
 
 ---
 
@@ -93,8 +95,7 @@ A standalone `/how` page that explains:
 | **Icons** | Lucide React |
 | **Crypto** | Web Crypto API (`crypto.subtle`) — no third-party crypto library |
 | **Bundler** | Vite 8 |
-| **Relay Server** | Bun + native WebSocket (`Bun.serve`) |
-| **Package Manager** | Bun |
+| **Relay Server** | Dual-runtime HTTP + WebSocket server (`server.ts` — Node.js ≥ 22.18 or Bun ≥ 1.1) |
 
 ---
 
@@ -108,7 +109,7 @@ A standalone `/how` page that explains:
 │   ├── main.tsx                 # React root
 │   ├── index.css                # Tailwind CSS v4 + design tokens
 │   ├── lib/
-│   │   ├── crypto.ts            # ★ Cryptographic core (AES-CBC, HMAC, PBKDF2, HKDF)
+│   │   ├── crypto.ts            # ★ Cryptographic core (AES-CBC, HMAC, PBKDF2 512-bit split)
 │   │   ├── session.tsx          # Room/session context (WebSocket, message state)
 │   │   └── router.ts            # Lightweight hash-based router
 │   ├── screens/
@@ -155,50 +156,46 @@ The relay only ever forwards this JSON blob. It never receives the passphrase, `
 
 ### Prerequisites
 
-- **Bun** ≥ 1.1 — install from <https://bun.sh>
-
-```bash
-curl -fsSL https://bun.sh/install | bash
-```
+- **Node.js** ≥ 22.18 (with `npm`) — tested on Node v26.12.0  
+  *(Optional: **Bun** ≥ 1.1 also works seamlessly with `bun server.ts`)*
 
 ### Install dependencies
 
 ```bash
-bun install
+npm install
 ```
 
 ### Run (relay + UI together)
 
-**Terminal 1 — relay server:**
+**Terminal 1 — relay server (`127.0.0.1:3001`):**
 ```bash
-bun server.ts --port 3001
+npm run dev:relay
 ```
 
-**Terminal 2 — Vite dev server:**
+**Terminal 2 — Vite dev server (`127.0.0.1:5173`):**
 ```bash
-bun run dev
+npm run dev
 ```
 
-Open <http://localhost:5173> in **two separate browser tabs** (or two devices on the same network).
+Open **<http://127.0.0.1:5173>** in **two separate browser tabs** (each tab maintains its own `sessionStorage` session).
 
-### Production build
+### Production build (single-server mode)
 
 ```bash
-bun run build         # TypeScript check + Vite bundle → dist/
-bun server.ts         # serves dist/ on port 3001
+npm start             # runs tsc --noEmit + vite build → dist/, then serves on http://127.0.0.1:3001
 ```
 
 ---
 
 ## Demo Walkthrough (for ESE)
 
-1. **Tab A** → "Create Room" → note the 6-letter room code → "Session Setup" → enter passphrase `cis-demo-2025` → keys derived
-2. **Tab B** → "Join Room" → enter room code → "Session Setup" → enter **same** passphrase → keys derived
-3. **Tab A (Alice)** → type `Hello from Alice` → Send → watch the **Sender Pipeline** animate all 5 steps
-4. **Tab B (Bob)** → accept the pending message → watch the **Receiver Pipeline** animate MAC verification, replay check, and decryption
-5. **Enable Tamper** in Tab A → send another message → Bob's pipeline shows **Authentication Failed** → message blocked before decryption
-6. **Replay** a past envelope from Alice → Bob's ledger shows **Replay detected**
-7. Navigate to `/how` for the full educational explainer
+1. **Tab A** → **Create Room** → share the 6-character code or invite link (`#/join/<CODE>`) → wait for Bob → **Continue** → enter passphrase `cis-demo-2025` → **Establish session** → **Enter room**
+2. **Tab B** → **Join Room** (or open invite link) → enter the same passphrase `cis-demo-2025` → verify identical key **Fingerprint** → **Enter room**
+3. **Tab A (Alice)** → type `Hello from Alice` → **Send** → step through the 5-stage **Sender Pipeline** (`Note` → `Two keys` → `Press` → `Seal` → `Send`)
+4. **Tab B (Bob)** → click **Start decryption** → step through the 5-stage **Receiver Pipeline** (`Parcel` → `Bob's seal` → `Compare` → `Ledger` → `Open`)
+5. **MITM Tamper Demo:** Open **Attack** in Alice's Room desk → check **Tamper next message** → send a message → watch Bob's Receiver Pipeline halt at **Compare** (`The two seals are different`) / Room show **Authentication failed** (**Rejected**) without decrypting
+6. **Replay Demo:** Click **Replay last** in Alice's **Attack** drawer → Bob's MAC passes on **Compare**, then **Ledger** rejects the duplicate sequence number (**Replay detected**) before decryption
+7. Open **How it works** (`/#/how`) in the top bar for the architecture and theory overview
 
 ---
 
@@ -207,12 +204,12 @@ bun server.ts         # serves dist/ on port 3001
 | Property | Mechanism |
 |---|---|
 | **Confidentiality** | AES-256-CBC, fresh 128-bit random IV per message |
-| **Integrity & Authenticity** | HMAC-SHA256, constant-time comparison |
-| **EtM ordering** | MAC is verified *before* decryption (prevents padding-oracle) |
-| **Key separation** | HKDF domain-separated `K_enc` and `K_mac` |
-| **Brute-force resistance** | PBKDF2-SHA256, 210,000 iterations, 128-bit salt |
-| **Replay protection** | Monotonically increasing sequence counter per session |
-| **Zero server-side secrets** | Relay only routes ciphertexts; passphrase & keys never leave the browser |
+| **Integrity & Authenticity** | HMAC-SHA256, constant-time byte-by-byte XOR comparison |
+| **EtM ordering** | MAC is verified *before* sequence check and decryption (prevents padding-oracle) |
+| **Key separation** | 512-bit PBKDF2 output split into distinct 256-bit `K_enc` and `K_mac` non-extractable keys |
+| **Brute-force resistance** | PBKDF2-HMAC-SHA256, 210,000 iterations, 128-bit per-room salt |
+| **Replay protection** | Per-sender ledger of accepted sequence numbers (bound inside MAC input) |
+| **Zero server-side secrets** | Relay only routes opaque envelopes; passphrase & keys never leave the tab |
 
 ---
 
