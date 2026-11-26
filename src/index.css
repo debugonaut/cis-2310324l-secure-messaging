@@ -120,6 +120,68 @@
   background: transparent;
 }
 
+/* Responsive semantic rubric table */
+.rubric-table-wrap {
+  overflow-x: auto;
+  max-inline-size: 100%;
+  container-type: inline-size;
+}
+
+.rubric-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  --col-1: "Criterion";
+  --col-2: "Marks & CO";
+  --col-3: "Where Demonstrated in This Project";
+}
+
+.rubric-table thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+}
+
+@container (width < 580px) {
+  .rubric-table,
+  .rubric-table thead,
+  .rubric-table tbody,
+  .rubric-table tr,
+  .rubric-table th,
+  .rubric-table td {
+    display: block;
+  }
+
+  .rubric-table thead {
+    display: none;
+  }
+
+  .rubric-table tbody tr {
+    margin-block-end: 0.75rem;
+    border: 1px solid var(--color-line);
+    border-radius: 10px;
+    background: var(--color-paper);
+    overflow: hidden;
+  }
+
+  .rubric-table tbody th {
+    background: var(--color-sand);
+    border-bottom: 1px solid var(--color-line-soft);
+  }
+
+  .rubric-table td:nth-child(2)::before {
+    content: var(--col-2) ": ";
+    font-weight: 500;
+    color: var(--color-ink);
+  }
+
+  .rubric-table td:nth-child(3)::before {
+    content: var(--col-3) ": ";
+    font-weight: 500;
+    color: var(--color-ink);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

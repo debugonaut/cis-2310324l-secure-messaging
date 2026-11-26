@@ -41,7 +41,16 @@ the receiver verifies the HMAC tag *before* decryption, preventing padding-oracl
 |---|---|---|
 | **`2310324L.CEO.1`** | Implement cryptography, the **CIA triad** of information security types | **Confidentiality:** `AES-256-CBC` hides plaintext. **Integrity:** `HMAC-SHA256` catches 1-bit MITM tampering (`Authentication failed`). **Availability / Resilience:** Sequence ledger rejects replay & malformed/oversized packets cleanly before decryption. |
 | **`2310324L.CEO.2`** | Apply various encryption mechanisms for **secure transmission of data** and **key management** required for encryption | **Secure Transmission:** WebSocket relay forwards only opaque `{ v, seq, IV, ct, mac }` envelopes. **Key Management:** Shared passphrase + per-room 16-byte random salt stretched via `PBKDF2-HMAC-SHA256` (`210,000` rounds) → split into non-extractable `K_enc` & `K_mac` + visual key **Fingerprint** check (`SessionSetup`). |
-| **`2310324L.CEO.3`** | Build digital signature schemes and **message authentication techniques** | **Message Authentication:** Practical 08 `HMAC-SHA256` (`Encrypt-then-MAC`) with constant-time XOR comparison, live step-by-step inspection (`ReceiverPipeline`), MITM bit-flip rejection, and replay protection *(shared-key MAC authentication; non-repudiation is discussed as a future RSA/ECDSA extension)*. |
+| **`2310324L.CEO.3`** | Build digital signature schemes and **message authentication techniques** | **Message Authentication (`CO3 · 6M`):** Practical 08 `HMAC-SHA256` (`Encrypt-then-MAC`) with constant-time XOR comparison, live step-by-step inspection (`ReceiverPipeline`), MITM bit-flip rejection, and replay protection *(shared-key MAC authentication; non-repudiation is discussed as a future RSA/ECDSA extension)*. |
+
+### ESE Integrated Project Rubrics (`30 Marks`)
+
+| Criterion | Marks | CO | Mapped Project Evidence |
+|---|---|---|---|
+| **1. Conceptual Understanding of CIS** | `10` | `CO1` | CIA Triad & threat model in `/#/how` + PPT Slides 1–2, AES-CBC/HMAC working principles |
+| **2. Algorithm Implementation & Key Mgmt** | `8` | `CO2` | Web Crypto `AES-256-CBC` + 16B salt + PBKDF2 (`210k` rounds) splitting `K_enc` / `K_mac` + Fingerprint |
+| **3. Digital Signature & Message Auth** | `6` | `CO3` | `HMAC-SHA256` EtM gate, `constantTimeEqual()`, live `Tamper next message` 1-bit rejection |
+| **4. Integration, Demo, PPT & Q&A** | `6` | `CO1–3` | Practical 03 + 08 side-by-side wizards, `Replay last` detection, 11-slide `.pptx` & `/#/how` table |
 
 ---
 

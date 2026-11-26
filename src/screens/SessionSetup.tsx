@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Eye, EyeOff, Fingerprint } from "lucide-react";
 import { useState } from "react";
 import { useRoute } from "../lib/router";
-import { PBKDF2_ITERATIONS } from "../lib/crypto";
+import { PBKDF2_ITERATIONS, shortHex } from "../lib/crypto";
 import { useSession } from "../lib/session";
 import { Button, Card, ConnectionDot, Eyebrow, Field, Input, Spinner, TechDetails, TechRow } from "../components/ui";
 
@@ -109,11 +109,12 @@ export default function SessionSetup() {
                 </Button>
 
                 <div className="mt-5">
-                  <TechDetails title="Parameters">
+                  <TechDetails title="Key management parameters" open>
                     <TechRow label="KDF" value="PBKDF2-HMAC-SHA256" />
+                    <TechRow label="Room salt" value={`${shortHex(keys.saltB64, 10, 6)} · 16 B`} />
                     <TechRow label="Iterations" value={PBKDF2_ITERATIONS.toLocaleString()} />
-                    <TechRow label="Output" value="512 bits → K_enc ‖ K_mac" />
-                    <TechRow label="Encryption" value="AES-256-CBC" />
+                    <TechRow label="Key split" value="512 bits → K_enc (256) ‖ K_mac (256)" />
+                    <TechRow label="Storage" value="Non-extractable CryptoKey" />
                   </TechDetails>
                 </div>
               </>

@@ -24,10 +24,10 @@ This deck is built specifically to present **side-by-side with the live browser 
 - **Action before presenting:** Open Slide 1 in PowerPoint/Keynote/Google Slides and replace `[Your Name]`, `[Teammate Name]`, and roll numbers in the bottom card.
 
 ### Slide 2 — What We Are Doing
-- **Three Problems Solved:**
-  1. **Eavesdropping (Snooping):** Plain messages can be read on the network → *AES-256-CBC (`Part 1`).*
-  2. **MITM Tampering (Editing):** An attacker flips ciphertext bits so the receiver decodes wrong words → *HMAC-SHA256 seal (`Part 2`).*
-  3. **Replay Attacks (Re-sending):** An attacker re-sends a previously valid message later → *Sequence counter + Ledger (`Part 2`).*
+- **CIA Triad & Threats Solved (`CO1 · 10 Marks`):**
+  1. **Confidentiality vs Eavesdropping:** Plain messages can be read on the network → *`AES-256-CBC` (`Part 1`, Practical 03).*
+  2. **Integrity & Authenticity vs MITM Tampering:** An attacker flips ciphertext bits so the receiver decodes altered words → *`HMAC-SHA256` seal (`Part 2`, Practical 08).*
+  3. **Availability & Freshness vs Replay Attacks:** An attacker re-sends a previously valid message later → *Sequence counter + Ledger + envelope checks (`Part 2`).*
 - **Two-Part Live Demo Rule:** Encryption locks the box (`5 steps`), HMAC seals it, and Bob **never** opens the lock before verifying the seal and checking the sequence ledger (`4 decryption steps`).
 
 ---
@@ -54,7 +54,7 @@ This deck is built specifically to present **side-by-side with the live browser 
 - **Simple Explanation (Practical 03):**
   1. **Fresh 16-byte Random IV:** Generated via `crypto.getRandomValues()` for every message so encrypting the same plaintext twice creates completely different ciphertexts.
   2. **`PKCS#7` Padding:** AES operates strictly in 16-byte blocks. If 10 bytes are entered, 6 bytes of value `0x06` are appended (`16` bytes gets one full 16-byte padding block of `0x10`).
-  3. **Cipher Block Chaining (`CBC`):** Block 1 is XOR-ed with the random `IV`, then encrypted with `K_enc` (`14 rounds`). Every later block is XOR-ed with the **previous ciphertext block** before encryption so repeating patterns vanish.
+  3. **Cipher Block Chaining (`CBC`) & AES-256 Rounds:** Block 1 is XOR-ed with the random `IV`, then scrambled through 14 AES-256 rounds (`SubBytes`, `ShiftRows`, `MixColumns`, `AddRoundKey`) using `K_enc`. Every later block is XOR-ed with the **previous ciphertext block** before encryption so repeating patterns vanish.
 
 ### Slide 6 (Encryption 4/5) — Step 04: Stamping With `HMAC-SHA256` (`Seal`)
 - **Simple Explanation (Practical 08):**
@@ -104,7 +104,19 @@ This deck is built specifically to present **side-by-side with the live browser 
 
 ---
 
+## ESE Integrated Project Rubrics Mapping (`30 Marks Total`)
+
+| Rubric Criterion | Max | CO | How to Hit **Excellent** Band Tomorrow |
+|---|---|---|---|
+| **1. Conceptual Understanding of CIS** | `10` | `CO1` | Clearly walk through **CIA triad** (Slide 2 & `/#/how`), explain snooping/MITM/replay threats, AES 14-round operations + CBC/PKCS#7, HMAC `ipad`/`opad`, and Encrypt-then-MAC vs MAC-then-Encrypt. |
+| **2. Cryptographic Algo Implementation & Key Mgmt** | `8` | `CO2` | Show **real Web Crypto** (`AES-256-CBC` + `HMAC-SHA256`), `Key management parameters` open in `SessionSetup` (16B random salt, PBKDF2 `210,000` rounds, 512-bit split into `K_enc` + `K_mac`, non-extractable keys, matching **Fingerprint**). |
+| **3. Digital Signature & Message Authentication** | `6` | `CO3` | Show `HMAC-SHA256` covering `v ‖ seq ‖ IV ‖ ct`, `constantTimeEqual()` tag check in `ReceiverPipeline`, and run **`Attack → Tamper next message`** proving 1-bit change locks decryption (`Authentication failed`). |
+| **4. Integration, Demo, PPT & Q&A** | `6` | `CO1–CO3` | Present the 11-slide deck side-by-side with Alice (`5` encryption steps) & Bob (`5` decryption steps), run **normal + tamper + replay** live, and use the `Reset (↺)` navbar button cleanly between scenarios. |
+
+---
+
 ## Presenter Tip for Side-by-Side Execution
 1. Run `npm start` in `CIS_Final_Project` and open the printed `http://127.0.0.1:<port>` URL in two browser tabs (**Alice** & **Bob**) on one side of your screen (or switch Alt+Tab cleanly with PowerPoint).
-2. Present **Slides 1–2** first, step through **Slides 3–7** alongside Alice's **Sender Pipeline**, switch speaker to Bob for **Slides 8–11** alongside Bob's **Receiver Pipeline**, then run **Tamper next message** and **Replay last** live!
-3. Click the **Reset icon (`↺`)** in the top-right navbar anytime between runs to start completely fresh.
+2. Open **`How it works`** (`/#/how`) once to show the **CIA Triad**, working principles, and **ESE Rubrics (`30 Marks`)** table built directly into the site.
+3. Present **Slides 1–2** first, step through **Slides 3–7** alongside Alice's **Sender Pipeline**, switch speaker to Bob for **Slides 8–11** alongside Bob's **Receiver Pipeline**, then demonstrate **Tamper next message** and **Replay last** live!
+4. Click the **Reset icon (`↺`)** in the top-right navbar anytime between runs to start completely fresh.
