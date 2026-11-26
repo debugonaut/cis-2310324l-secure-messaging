@@ -1,8 +1,9 @@
 # ESE Presentation Script & Slide Guide — Secure Messaging System Using AES and HMAC
 
 > **PowerPoint Deck:** [`docs/Secure_Messaging_AES_HMAC.pptx`](./Secure_Messaging_AES_HMAC.pptx) (**11 slides**)  
-> **Course:** Cryptography and Information Security Lab (`2310324L`) · MIT Academy of Engineering, Pune  
-> **Integrated Practicals:** Practical 03 (`AES-256-CBC`) + Practical 08 (`HMAC-SHA256`) · **30 Marks ESE**
+> **Course:** Cryptography and Information Security Lab (`2310324L`) · MIT Academy of Engineering (Autonomous), Pune  
+> **Program:** TY B.Tech Computer Engineering \[Software Engineering\] · AY 2025–26  
+> **Integrated Practicals:** Practical 03 (`Symmetric Key Cryptography — AES`) + Practical 08 (`Authentication using HMAC-SHA256`) · **30 Marks ESE**
 
 This deck is built specifically to present **side-by-side with the live browser demo**:
 - **Opening (Slides 1–2):** Introduction + What We Are Doing
@@ -16,10 +17,10 @@ This deck is built specifically to present **side-by-side with the live browser 
 ### Slide 1 — Introduction
 - **Title:** Secure Messaging System Using AES and HMAC
 - **Core Idea (Simple words):** Alice and Bob chat privately in two browser tabs over an untrusted server. `AES-256-CBC` (Practical 03) keeps messages secret, and `HMAC-SHA256` (Practical 08) keeps them tamper-proof. Every key, IV, ciphertext block, and tag is computed live by the browser's native Web Crypto API (`crypto.subtle`).
-- **Course Outcomes Covered:**
-  - `CEO.1`: Apply symmetric encryption (`AES-256-CBC`) for confidentiality.
-  - `CEO.2`: Apply `HMAC-SHA256` for message integrity & authentication (`Encrypt-then-MAC`).
-  - `CEO.3`: Analyse & demonstrate real attack detection (`Tamper next message` MITM bit-flip + `Replay last`).
+- **Course Outcomes (`2310324L`) Covered:**
+  - **`2310324L.CEO.1`** *(Implement cryptography, the CIA triad of information security types)*: **C** (`AES-256-CBC`), **I** (`HMAC-SHA256` MITM tamper rejection), **A** (anti-replay ledger + clean malformed-packet rejection without crash).
+  - **`2310324L.CEO.2`** *(Apply encryption mechanisms for secure transmission of data and key management required for encryption)*: Opaque WebSocket relay routing `{ v, seq, IV, ct, mac }` + `PBKDF2-HMAC-SHA256` (`210,000` iterations, 16-byte salt) splitting into non-extractable `K_enc`/`K_mac` + visual key **Fingerprint**.
+  - **`2310324L.CEO.3`** *(Build digital signature schemes and message authentication techniques)*: Full `HMAC-SHA256` message authentication (`Encrypt-then-MAC`), constant-time tag verification, and live bit-flip rejection *(note: shared-key MAC authenticates between Alice & Bob cleanly; public-key signatures from Practical 04/07 are noted if asked about non-repudiation)*.
 - **Action before presenting:** Open Slide 1 in PowerPoint/Keynote/Google Slides and replace `[Your Name]`, `[Teammate Name]`, and roll numbers in the bottom card.
 
 ### Slide 2 — What We Are Doing

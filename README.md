@@ -1,9 +1,9 @@
 # Secure Messaging System Using AES and HMAC
 
 > **CIS Lab — End Semester Practical Examination**  
-> MIT Academy of Engineering (Autonomous), Affiliated to Savitribai Phule Pune University  
-> TY B.Tech Computer Science & Engineering (Software Engineering) · Batch 2025–26  
-> Subject Code: `2310324L` — Cryptography and Information Security Lab
+> MIT Academy of Engineering (An Autonomous Institute Affiliated to Savitribai Phule Pune University)  
+> School of Computer Engineering · TY B.Tech Computer Engineering \[Software Engineering\] · AY 2025–26  
+> Course Code: `2310324L` — Cryptography and Information Security Lab (`30 Marks` Practical Demo & Presentation)
 
 ---
 
@@ -23,25 +23,25 @@ The relay server is deliberately honest: it routes opaque envelopes between peer
 
 ---
 
-## Integrated Practicals
+## Integrated Practicals (from `2310324L` Syllabus)
 
-| Practical | Topic | Implementation |
+| Practical | Official Syllabus Topic | Implementation |
 |---|---|---|
-| **Practical 03** | Symmetric Key Cryptography | AES-256-CBC with PKCS#7 padding, 128-bit random IV, Web Crypto `encrypt` |
-| **Practical 08** | Message Authentication using HMAC | HMAC-SHA256 over `VERSION ‖ SEQ ‖ IV ‖ CIPHERTEXT`, Web Crypto `sign` |
+| **Practical 03** | Implement Symmetric Key Cryptography (`AES, /DES/ RC4 etc.`) | `AES-256-CBC` with `PKCS#7` padding, fresh 128-bit random IV per message, Web Crypto `encrypt`/`decrypt` |
+| **Practical 08** | Encode & decode message for Authentication using `HMAC SHA256` | `HMAC-SHA256` over `VERSION ‖ SEQ ‖ IV ‖ CIPHERTEXT` via Web Crypto `sign`, constant-time tag verification |
 
 The two practicals are **meaningfully integrated** through the **Encrypt-then-MAC (EtM)** construction:
 the receiver verifies the HMAC tag *before* decryption, preventing padding-oracle and chosen-ciphertext attacks.
 
 ---
 
-## Course Outcomes (COs) Covered
+## Course Outcomes (`2310324L`) Covered
 
-| CO | Outcome | Where Demonstrated |
+| CO | Official Syllabus Statement (`L3`) | Where Demonstrated in Project |
 |---|---|---|
-| **CEO.1** | Apply symmetric key cryptography (AES) for confidentiality | AES-256-CBC encryption in `src/lib/crypto.ts`; Sender Pipeline step-by-step walk-through |
-| **CEO.2** | Apply HMAC for message integrity and authentication | HMAC-SHA256 in `src/lib/crypto.ts`; Receiver Pipeline MAC verification; tamper-and-reject flow |
-| **CEO.3** | Analyse and demonstrate attack detection (MITM, replay) | Tamper mode in Room screen; replay detection via sequence-number ledger; MITM badge on rejected messages |
+| **`2310324L.CEO.1`** | Implement cryptography, the **CIA triad** of information security types | **Confidentiality:** `AES-256-CBC` hides plaintext. **Integrity:** `HMAC-SHA256` catches 1-bit MITM tampering (`Authentication failed`). **Availability / Resilience:** Sequence ledger rejects replay & malformed/oversized packets cleanly before decryption. |
+| **`2310324L.CEO.2`** | Apply various encryption mechanisms for **secure transmission of data** and **key management** required for encryption | **Secure Transmission:** WebSocket relay forwards only opaque `{ v, seq, IV, ct, mac }` envelopes. **Key Management:** Shared passphrase + per-room 16-byte random salt stretched via `PBKDF2-HMAC-SHA256` (`210,000` rounds) → split into non-extractable `K_enc` & `K_mac` + visual key **Fingerprint** check (`SessionSetup`). |
+| **`2310324L.CEO.3`** | Build digital signature schemes and **message authentication techniques** | **Message Authentication:** Practical 08 `HMAC-SHA256` (`Encrypt-then-MAC`) with constant-time XOR comparison, live step-by-step inspection (`ReceiverPipeline`), MITM bit-flip rejection, and replay protection *(shared-key MAC authentication; non-repudiation is discussed as a future RSA/ECDSA extension)*. |
 
 ---
 
@@ -219,8 +219,8 @@ npm start             # runs tsc --noEmit + vite build → dist/, then serves on
 | Field | Value |
 |---|---|
 | **Subject** | Cryptography and Information Security Lab (`2310324L`) |
-| **Institute** | MIT Academy of Engineering, Pune |
-| **Program** | TY B.Tech CSE (Software Engineering) |
+| **Institute** | MIT Academy of Engineering (Autonomous), Pune |
+| **Program** | TY B.Tech Computer Engineering \[Software Engineering\] |
 | **Practical Integration** | Practical 03 (AES) + Practical 08 (HMAC-SHA256) |
 | **ESE Marks** | 30 |
 | **Member 1** | *(your name and roll number)* |
