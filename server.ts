@@ -57,7 +57,7 @@ const flag = (name: string, fallback: string) => {
   return i >= 0 && args[i + 1] ? args[i + 1] : fallback;
 };
 
-const PORT = Number(flag("port", "3001")) || Number(process.env.PORT) || 3001;
+const PORT = Number(flag("port", process.env.PORT || "3001")) || 3001;
 const DEV = args.includes("--dev") || process.env.RELAY_DEV === "1";
 const ROOM_TTL_MS = 6 * 60 * 60 * 1000;
 const MAX_ENVELOPE_CHARS = 64 * 1024;
@@ -587,7 +587,14 @@ async function startNodeServer() {
     tcpSocket.on("error", cleanup);
   });
 
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", (err: NodeJS.ErrnoException) => {
+      if (err.code === "EADDRINUSE") {
+        console.error(`Error: 127.0.0.1:${PORT} is already in use. Stop the other relay process or run with PORT=3005 npm start (or --port 3005).`);
+        process.exit(1);
+      }
+      reject(err);
+    });
     server.listen(PORT, "127.0.0.1", () => resolve());
   });
   console.log(`relay listening on http://127.0.0.1:${PORT}  (websocket /ws, runtime: node, rooms: ${rooms.size})`);
