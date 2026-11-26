@@ -131,7 +131,8 @@ A standalone `/#/how` page (`How it works` / `About the project`) that explains:
 ├── tsconfig.json
 ├── package.json
 └── docs/
-    └── PRESENTATION.md          # Slide-by-slide presentation guide for ESE demo
+    ├── Secure_Messaging_AES_HMAC.pptx  # 11-slide ESE PowerPoint deck
+    └── PRESENTATION.md                 # Companion slide script & viva notes
 ```
 
 ---
