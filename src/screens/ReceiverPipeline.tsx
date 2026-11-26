@@ -12,11 +12,41 @@ import {
 import { WizardFrame } from "../components/wizard";
 
 const STEPS = [
-  { label: "Parcel" },
-  { label: "Bob's seal" },
-  { label: "Compare" },
-  { label: "Ledger" },
-  { label: "Open" },
+  {
+    label: "Parcel",
+    points: [
+      "Bob receives the untrusted envelope from the relay with sender name, #seq, IV, ciphertext, and tag.",
+      "The message stays locked and unread — Encrypt-then-MAC forbids decrypting before authenticating.",
+    ],
+  },
+  {
+    label: "Bob's seal",
+    points: [
+      "Bob packs the received version, #seq, IV, and ciphertext in the exact same byte order.",
+      "Using his own copy of K_mac, he runs HMAC-SHA256 to compute what the 32-byte tag should be.",
+    ],
+  },
+  {
+    label: "Compare",
+    points: [
+      "Bob compares the arrived tag with his recomputed tag byte-by-byte in constant time.",
+      "If they match, the parcel is authentic and untouched; if even 1 bit differs, decryption is blocked.",
+    ],
+  },
+  {
+    label: "Ledger",
+    points: [
+      "Bob checks whether this sender's sequence number (#seq) is already written in his accepted ledger.",
+      "A new number passes as fresh; a repeated number is rejected as a replay attack.",
+    ],
+  },
+  {
+    label: "Open",
+    points: [
+      "Only after both the tag match and replay check pass does AES-256-CBC decrypt using K_enc and the IV.",
+      "PKCS#7 padding is removed to reveal the plaintext, #seq is saved in the ledger, and an ACK is sent back.",
+    ],
+  },
 ];
 
 export default function ReceiverPipeline({ messageId }: { messageId: string }) {

@@ -245,6 +245,7 @@ export function ResetButton({ onReset, className }: { onReset: () => void; class
 
 export interface Step {
   label: string;
+  points?: string[];
 }
 
 export function Stepper({

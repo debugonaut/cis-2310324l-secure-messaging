@@ -6,11 +6,46 @@ import { CipherPress, KeyThreads, NoteWrite, ParcelRoute, WaxSealPress } from ".
 import { WizardFrame } from "../components/wizard";
 
 const STEPS = [
-  { label: "Note" },
-  { label: "Two keys" },
-  { label: "Press" },
-  { label: "Seal" },
-  { label: "Send" },
+  {
+    label: "Note",
+    points: [
+      "You type your plain, readable message inside your browser tab.",
+      "Your browser encodes the text into UTF-8 bytes and assigns the next sequence number (#seq).",
+      "Nothing is encrypted or sent yet — the relay server cannot see this note.",
+    ],
+  },
+  {
+    label: "Two keys",
+    points: [
+      "Your shared passphrase and the room's 16-byte salt run through PBKDF2-SHA256 (210,000 rounds).",
+      "The 512-bit output is split into two separate 256-bit keys: K_enc (for locking) and K_mac (for sealing).",
+      "Both Alice and Bob compute the exact same keys locally — neither the passphrase nor keys ever leave the tab.",
+    ],
+  },
+  {
+    label: "Press",
+    points: [
+      "A fresh 16-byte random IV is created so even identical messages produce completely different ciphertext.",
+      "PKCS#7 padding rounds the plaintext up to a whole multiple of 16-byte AES blocks.",
+      "AES-256-CBC encrypts each block chained to the one before it using K_enc.",
+    ],
+  },
+  {
+    label: "Seal",
+    points: [
+      "Your browser packs version, sequence number, IV, and ciphertext together in fixed order.",
+      "HMAC-SHA256 signs that whole package with K_mac to create a unique 32-byte authentication tag.",
+      "Changing even a single bit later anywhere in the envelope will break this tag.",
+    ],
+  },
+  {
+    label: "Send",
+    points: [
+      "Only the encrypted envelope (version, seq, IV, ciphertext, tag) is sent over WebSocket — zero plaintext.",
+      "If Tamper next message was ticked, 1 bit in the ciphertext is flipped before sending to simulate an attacker.",
+      "The honest relay forwards the sealed parcel to Bob without being able to read it.",
+    ],
+  },
 ];
 
 export default function SenderPipeline({ messageId }: { messageId: string }) {

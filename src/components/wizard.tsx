@@ -47,6 +47,7 @@ export function WizardFrame({
   const [playing, setPlaying] = useState(false);
   const reduced = useReducedMotion();
   const last = steps.length - 1;
+  const activeStep = steps[step];
   const stepRef = useRef(onStep);
   stepRef.current = onStep;
 
@@ -92,6 +93,21 @@ export function WizardFrame({
 
         <div className="mt-7">
           <Stepper steps={steps} current={step} onSelect={(index) => onStep(index)} blocked={blocked} />
+          {activeStep?.points?.length ? (
+            <div className="mt-3 rounded-[11px] border border-line-soft bg-sand/45 px-4 py-3">
+              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+                Step {String(step + 1).padStart(2, "0")} · What happens here
+              </p>
+              <ul className="mt-2 space-y-1.5">
+                {activeStep.points.map((point) => (
+                  <li key={point} className="flex items-start gap-2.5 text-[14px] leading-snug text-ink-soft">
+                    <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-brown/60" aria-hidden="true" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
 
         <div className="card mt-5 min-h-[380px] px-5 py-6 shadow-[var(--shadow-soft)] sm:px-8 sm:py-8">
