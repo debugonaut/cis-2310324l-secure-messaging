@@ -57,7 +57,8 @@ const flag = (name: string, fallback: string) => {
   return i >= 0 && args[i + 1] ? args[i + 1] : fallback;
 };
 
-const PORT = Number(flag("port", process.env.PORT || "3001")) || 3001;
+const explicitPort = flag("port", "") || process.env.PORT || "";
+const PORT = Number(explicitPort || "3001") || 3001;
 const DEV = args.includes("--dev") || process.env.RELAY_DEV === "1";
 const ROOM_TTL_MS = 6 * 60 * 60 * 1000;
 const MAX_ENVELOPE_CHARS = 64 * 1024;
@@ -298,54 +299,72 @@ function jsonResponse(body: unknown, status = 200): Response {
 async function startBunServer(bun: BunGlobal) {
   const distDir = new URL("./dist/", import.meta.url);
   const hasBuild = await bun.file(new URL("index.html", distDir)).exists();
+  const candidates = explicitPort || DEV ? [PORT] : Array.from({ length: 20 }, (_, i) => PORT + i);
 
-  const server = bun.serve({
-    port: PORT,
-    hostname: "127.0.0.1",
-    idleTimeout: 255,
+  let server: { port: number } | null = null;
+  let lastError: unknown;
+  for (const candidate of candidates) {
+    try {
+      server = bun.serve({
+        port: candidate,
+        hostname: "127.0.0.1",
+        idleTimeout: 255,
 
-    async fetch(request, srv) {
-      const url = new URL(request.url);
-      if (url.pathname === "/ws") {
-        const ok = srv.upgrade(request, { data: {} });
-        return ok ? undefined : new Response("WebSocket upgrade failed", { status: 400 });
-      }
+        async fetch(request, srv) {
+          const url = new URL(request.url);
+          if (url.pathname === "/ws") {
+            const ok = srv.upgrade(request, { data: {} });
+            return ok ? undefined : new Response("WebSocket upgrade failed", { status: 400 });
+          }
 
-      const api = handleApi(request.method, url.pathname, hasBuild);
-      if (api) return jsonResponse(api.body, api.status);
+          const api = handleApi(request.method, url.pathname, hasBuild);
+          if (api) return jsonResponse(api.body, api.status);
 
-      if (!hasBuild || DEV) {
-        return jsonResponse({ error: "relay running without a build — start Vite for the UI", hint: "npm run dev" }, 404);
-      }
+          if (!hasBuild || DEV) {
+            return jsonResponse({ error: "relay running without a build — start Vite for the UI", hint: "npm run dev" }, 404);
+          }
 
-      const clean = url.pathname === "/" ? "/index.html" : url.pathname;
-      const target = new URL(`.${clean}`, distDir);
-      if (!target.pathname.startsWith(distDir.pathname)) return new Response("Forbidden", { status: 403 });
+          const clean = url.pathname === "/" ? "/index.html" : url.pathname;
+          const target = new URL(`.${clean}`, distDir);
+          if (!target.pathname.startsWith(distDir.pathname)) return new Response("Forbidden", { status: 403 });
 
-      const file = bun.file(target);
-      if (await file.exists()) {
-        const immutable = clean.startsWith("/assets/");
-        return new Response(file as unknown as BodyInit, {
-          headers: immutable ? { "cache-control": "public, max-age=31536000, immutable" } : { "cache-control": "no-cache" },
-        });
-      }
+          const file = bun.file(target);
+          if (await file.exists()) {
+            const immutable = clean.startsWith("/assets/");
+            return new Response(file as unknown as BodyInit, {
+              headers: immutable ? { "cache-control": "public, max-age=31536000, immutable" } : { "cache-control": "no-cache" },
+            });
+          }
 
-      return new Response(bun.file(new URL("index.html", distDir)) as unknown as BodyInit, {
-        headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache" },
+          return new Response(bun.file(new URL("index.html", distDir)) as unknown as BodyInit, {
+            headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache" },
+          });
+        },
+
+        websocket: {
+          open() {},
+          message(socket, raw) {
+            const text = typeof raw === "string" ? raw : new TextDecoder().decode(raw);
+            handleWsMessage(socket, text);
+          },
+          close(socket) {
+            handleWsClose(socket);
+          },
+        },
       });
-    },
+      if (candidate !== PORT) {
+        console.log(`port ${PORT} busy — switched to http://127.0.0.1:${candidate}`);
+      }
+      break;
+    } catch (err) {
+      lastError = err;
+    }
+  }
 
-    websocket: {
-      open() {},
-      message(socket, raw) {
-        const text = typeof raw === "string" ? raw : new TextDecoder().decode(raw);
-        handleWsMessage(socket, text);
-      },
-      close(socket) {
-        handleWsClose(socket);
-      },
-    },
-  });
+  if (!server) {
+    console.error(`Error: unable to bind port starting at 127.0.0.1:${PORT}.`, lastError instanceof Error ? lastError.message : "");
+    process.exit(1);
+  }
 
   console.log(`relay listening on http://127.0.0.1:${server.port}  (websocket /ws, runtime: bun, rooms: ${rooms.size})`);
 }
@@ -587,17 +606,50 @@ async function startNodeServer() {
     tcpSocket.on("error", cleanup);
   });
 
-  await new Promise<void>((resolve, reject) => {
-    server.once("error", (err: NodeJS.ErrnoException) => {
-      if (err.code === "EADDRINUSE") {
-        console.error(`Error: 127.0.0.1:${PORT} is already in use. Stop the other relay process or run with PORT=3005 npm start (or --port 3005).`);
+  const candidates = explicitPort || DEV ? [PORT] : Array.from({ length: 20 }, (_, i) => PORT + i);
+  let activePort = PORT;
+  let bound = false;
+
+  for (const candidate of candidates) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const onError = (err: NodeJS.ErrnoException) => {
+          server.off("listening", onListening);
+          reject(err);
+        };
+        const onListening = () => {
+          server.off("error", onError);
+          resolve();
+        };
+        server.once("error", onError);
+        server.once("listening", onListening);
+        server.listen(candidate, "127.0.0.1");
+      });
+      activePort = candidate;
+      bound = true;
+      if (candidate !== PORT) {
+        console.log(`port ${PORT} busy — switched to http://127.0.0.1:${candidate}`);
+      }
+      break;
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code !== "EADDRINUSE" || candidates.length === 1) {
+        console.error(
+          code === "EADDRINUSE"
+            ? `Error: 127.0.0.1:${candidate} is already in use. Stop the other process or pass --port <port>.`
+            : err,
+        );
         process.exit(1);
       }
-      reject(err);
-    });
-    server.listen(PORT, "127.0.0.1", () => resolve());
-  });
-  console.log(`relay listening on http://127.0.0.1:${PORT}  (websocket /ws, runtime: node, rooms: ${rooms.size})`);
+    }
+  }
+
+  if (!bound) {
+    console.error(`Error: no free port found in range ${PORT}-${PORT + candidates.length - 1}.`);
+    process.exit(1);
+  }
+
+  console.log(`relay listening on http://127.0.0.1:${activePort}  (websocket /ws, runtime: node, rooms: ${rooms.size})`);
 }
 
 const maybeBun = (globalThis as { Bun?: BunGlobal }).Bun;
