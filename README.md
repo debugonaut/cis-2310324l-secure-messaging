@@ -142,6 +142,7 @@ A standalone `/#/how` page (`How it works` / `About the project`) that explains:
 └── docs/
     ├── Practical_03_AES.pptx           # 8-slide simple conceptual Practical 03 (AES) PPTX with Draw.io diagrams
     ├── Practical_08_HMAC_SHA256.pptx   # 55-slide thorough frame-by-frame Practical 08 (HMAC-SHA256) PPTX
+    ├── HMAC_SLIDE_GUIDE.md             # In-depth Practical 08 slide-by-slide & viva guide (20 & 55-slide index)
     ├── Secure_Messaging_AES_HMAC.pptx  # 11-slide combined ESE overview deck
     ├── PRESENTATION.md                 # Companion slide script & viva notes
     └── diagrams/                       # Editable Draw.io (.drawio) source diagrams
