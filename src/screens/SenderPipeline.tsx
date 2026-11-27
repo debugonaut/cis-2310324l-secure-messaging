@@ -9,41 +9,45 @@ const STEPS = [
   {
     label: "Note",
     points: [
-      "You type your plain, readable message inside your browser tab.",
-      "Your browser encodes the text into UTF-8 bytes and assigns the next sequence number (#seq).",
-      "Nothing is encrypted or sent yet — the relay server cannot see this note.",
+      "Plaintext is converted into UTF-8 byte representation (plainBytes) via browser Web Crypto TextEncoder.",
+      "A strictly incrementing sequence counter (#seq) is allocated locally to preserve order and prevent replay.",
+      "Data stays strictly in client-side memory — zero bytes leave the browser tab or reach the network.",
     ],
   },
   {
     label: "Two keys",
     points: [
-      "Your shared passphrase and the room's 16-byte salt run through PBKDF2-SHA256 (210,000 rounds).",
-      "The 512-bit output is split into two separate 256-bit keys: K_enc (for locking) and K_mac (for sealing).",
-      "Both Alice and Bob compute the exact same keys locally — neither the passphrase nor keys ever leave the tab.",
+      "Passphrase is normalized (Unicode NFKC) and combined with the room's unique 16-byte random salt to prevent precomputed rainbow tables.",
+      "PBKDF2-HMAC-SHA256 executes 210,000 rounds to derive 512 bits, making offline brute-force attacks computationally expensive.",
+      "512 bits are split into two independent 256-bit non-extractable CryptoKeys: K_enc (AES-CBC) and K_mac (HMAC-SHA256).",
+      "Both peers verify identical key derivation locally using a SHA-256 fingerprint without ever transmitting the secret key.",
     ],
   },
   {
     label: "Press",
     points: [
-      "A fresh 16-byte random IV is created so even identical messages produce completely different ciphertext.",
-      "PKCS#7 padding rounds the plaintext up to a whole multiple of 16-byte AES blocks.",
-      "AES-256-CBC encrypts each block chained to the one before it using K_enc.",
+      "A fresh 128-bit (16-byte) cryptographically secure random IV is generated via crypto.getRandomValues() for every message.",
+      "PKCS#7 deterministic padding appends 1 to 16 pad bytes so the payload aligns to exact 128-bit AES block boundaries.",
+      "Cipher Block Chaining (CBC) XORs each plaintext block with the preceding ciphertext block (C_i = AES_K(P_i ⊕ C_i-1)).",
+      "14 rounds of substitution-permutation transformations (SubBytes, ShiftRows, MixColumns, AddRoundKey) run under K_enc.",
     ],
   },
   {
     label: "Seal",
     points: [
-      "Your browser packs version, sequence number, IV, and ciphertext together in fixed order.",
-      "HMAC-SHA256 signs that whole package with K_mac to create a unique 32-byte authentication tag.",
-      "Changing even a single bit later anywhere in the envelope will break this tag.",
+      "Canonical macInput buffer is constructed: WIRE_VERSION (1 B) ‖ SEQ (8 B uint64) ‖ IV (16 B) ‖ CIPHERTEXT (N B).",
+      "Binds metadata and counter inside the MAC so an attacker cannot tamper with the IV or sequence number unnoticed.",
+      "HMAC-SHA256 executes nested hashing with inner pad (0x36) and outer pad (0x5C) using K_mac (RFC 2104).",
+      "Outputs a 32-byte (256-bit) tag: due to the avalanche effect, flipping any single bit alters ~50% of the tag bits.",
     ],
   },
   {
     label: "Send",
     points: [
-      "Only the encrypted envelope (version, seq, IV, ciphertext, tag) is sent over WebSocket — zero plaintext.",
-      "If Tamper next message was ticked, 1 bit in the ciphertext is flipped before sending to simulate an attacker.",
-      "The honest relay forwards the sealed parcel to Bob without being able to read it.",
+      "Payload is serialized into a 5-field JSON wire envelope: version, sequence counter, Base64 IV, ciphertext, and HMAC tag.",
+      "Transmitted over WebSocket (/ws) to the relay server without leaking plaintext, passphrase, or derived keys.",
+      "Simulated attack: if 'Tamper next message' is enabled, 1 bit in ctB64 is flipped (^= 0x01) to test MITM detection.",
+      "Relay delivers the sealed envelope to Bob and returns a delivery confirmation (relayed) to Alice.",
     ],
   },
 ];
@@ -84,18 +88,18 @@ export default function SenderPipeline({ messageId }: { messageId: string }) {
       {step === 0 ? (
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[22px] font-normal text-ink">The note</h2>
+            <h2 className="text-[22px] font-normal text-ink">The note (Plaintext Input)</h2>
             <Badge tone="neutral">plaintext</Badge>
           </div>
           <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-soft">
-            This is what you typed. Anyone who sees the paper can read it.
+            Alice enters the message inside the local browser context. Before encryption, the browser encodes the string into UTF-8 bytes and binds an incrementing sequence number (#seq) to guarantee packet ordering.
           </p>
           <div className="mt-5">
             <NoteWrite text={message.text ?? ""} />
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
             <Badge tone="neutral">{new TextEncoder().encode(message.text ?? "").length} bytes</Badge>
-            <Badge tone="neutral">Local only</Badge>
+            <Badge tone="neutral">Local memory only</Badge>
           </div>
         </div>
       ) : null}
@@ -103,11 +107,11 @@ export default function SenderPipeline({ messageId }: { messageId: string }) {
       {step === 1 ? (
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[22px] font-normal text-ink">One password, two keys</h2>
-            <Badge tone="neutral">PBKDF2</Badge>
+            <h2 className="text-[22px] font-normal text-ink">Key Derivation & Domain Separation</h2>
+            <Badge tone="neutral">PBKDF2-SHA256</Badge>
           </div>
           <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-soft">
-            The shared password unwinds into two keys. One locks the note; the other makes the seal.
+            Human passphrases lack the 256-bit entropy required for cryptographic security. PBKDF2 stretches the passphrase and a 16-byte random salt across 210,000 iterations to derive 512 bits, split cleanly into dedicated encryption (K_enc) and authentication (K_mac) keys.
           </p>
           <div className="mt-5">
             <KeyThreads fingerprint={keys?.fingerprint} />
@@ -118,12 +122,11 @@ export default function SenderPipeline({ messageId }: { messageId: string }) {
       {step === 2 ? (
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[22px] font-normal text-ink">The press</h2>
-            <Badge tone="neutral">AES-256-CBC</Badge>
+            <h2 className="text-[22px] font-normal text-ink">Symmetric Encryption (AES-256-CBC)</h2>
+            <Badge tone="neutral">Practical 03</Badge>
           </div>
           <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-soft">
-            The press turns the note into blocks of gibberish. Each block is tied to the one before, so the same words
-            never print the same pattern.
+            Practical 03: The UTF-8 plaintext is padded to 16-byte boundaries with PKCS#7 and encrypted with AES-256 in Cipher Block Chaining (CBC) mode. A fresh random 128-bit IV XORs with the first block, ensuring repeated plaintexts yield totally distinct ciphertexts.
           </p>
           <div className="mt-5">
             <CipherPress cipherHex={meta.ctHex} ivHex={meta.ivHex} text={message.text ?? ""} />
@@ -148,12 +151,11 @@ export default function SenderPipeline({ messageId }: { messageId: string }) {
       {step === 3 ? (
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[22px] font-normal text-ink">The seal</h2>
-            <Badge tone="neutral">HMAC-SHA256</Badge>
+            <h2 className="text-[22px] font-normal text-ink">Integrity Seal (HMAC-SHA256)</h2>
+            <Badge tone="neutral">Practical 08</Badge>
           </div>
           <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-soft">
-            A comb reads the whole box and presses its pattern into wax. Change one character inside, and the pattern
-            comes out different.
+            Practical 08: AES hides content but cannot prove whether ciphertext was manipulated in transit. HMAC-SHA256 signs the version, sequence number, IV, and ciphertext under K_mac, generating a 32-byte tamper-evident digital seal (Encrypt-then-MAC).
           </p>
           <div className="mt-5">
             <WaxSealPress macHex={meta.macHex} seq={envelope.seq} />
@@ -178,11 +180,11 @@ export default function SenderPipeline({ messageId }: { messageId: string }) {
       {step === 4 ? (
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[22px] font-normal text-ink">The hand-off</h2>
-            <Badge tone="neutral">transmission</Badge>
+            <h2 className="text-[22px] font-normal text-ink">Relay Transmission (Zero-Knowledge)</h2>
+            <Badge tone="neutral">WebSocket /ws</Badge>
           </div>
           <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-soft">
-            The relay passes the parcel along. It can see the number and the wax — never the note.
+            The opaque cryptographic envelope (version, seq, IV, ciphertext, HMAC tag) is transmitted over WebSocket. The relay server routes the envelope to Bob without ever seeing plain text, passphrases, or secret keys.
           </p>
           <div className="mt-5">
             <ParcelRoute

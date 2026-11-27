@@ -15,36 +15,43 @@ const STEPS = [
   {
     label: "Parcel",
     points: [
-      "Bob receives the untrusted envelope from the relay with sender name, #seq, IV, ciphertext, and tag.",
-      "The message stays locked and unread — Encrypt-then-MAC forbids decrypting before authenticating.",
+      "Envelope Ingestion: Bob's browser receives version, sequence number (#seq), Base64 IV, ciphertext, and HMAC tag from the relay.",
+      "Encrypt-then-MAC Security Invariant: Decryption is strictly forbidden before verifying the HMAC tag, stopping padding-oracle attacks.",
+      "Pre-Crypto Structural Validation: Verifies envelope format, 16-byte IV length, and non-empty ciphertext aligned to 16-byte AES block multiples.",
     ],
   },
   {
     label: "Bob's seal",
     points: [
-      "Bob packs the received version, #seq, IV, and ciphertext in the exact same byte order.",
-      "Using his own copy of K_mac, he runs HMAC-SHA256 to compute what the 32-byte tag should be.",
+      "Canonical Byte Packing: Assembles version (1 B), sequence number (8 B Big-Endian), IV (16 B), and ciphertext into the identical macInput array.",
+      "Dedicated Authentication Key (K_mac): Evaluates HMAC-SHA256 using Bob's local K_mac derived independently via PBKDF2 from the shared passphrase.",
+      "Deterministic Verification Target: Produces the exact 32-byte (256-bit) digest expected from a genuine sender holding the shared room secret.",
     ],
   },
   {
     label: "Compare",
     points: [
-      "Bob compares the arrived tag with his recomputed tag byte-by-byte in constant time.",
-      "If they match, the parcel is authentic and untouched; if even 1 bit differs, decryption is blocked.",
+      "Constant-Time Byte Comparison: Evaluates all 32 bytes using bitwise XOR accumulator (diff |= a[i] ^ b[i]) without early exit, eliminating timing side-channels.",
+      "Zero-Tolerance Integrity: 0 bits difference proves the envelope came from someone holding K_mac and arrived without a single bit changed.",
+      "Immediate Tamper Rejection: Any difference (~128 bits on bit-flip or wrong password) halts execution as 'Authentication failed', blocking AES decryption.",
     ],
   },
   {
     label: "Ledger",
     points: [
-      "Bob checks whether this sender's sequence number (#seq) is already written in his accepted ledger.",
-      "A new number passes as fresh; a repeated number is rejected as a replay attack.",
+      "Why HMAC Alone Cannot Stop Replay: An attacker replaying a captured message (#001) untouched submits a valid HMAC tag that passes Step 02.",
+      "Per-Sender Accepted Ledger: Bob checks whether #seq already exists in his acceptedRef list for this sender.",
+      "Duplicate Rejection: If the sequence number was already processed, the envelope is immediately rejected with 'Replay detected'.",
+      "Tamper-Proof Sequencing: Because #seq is authenticated inside the HMAC tag on Step 02, an attacker cannot modify the counter to bypass the ledger.",
     ],
   },
   {
     label: "Open",
     points: [
-      "Only after both the tag match and replay check pass does AES-256-CBC decrypt using K_enc and the IV.",
-      "PKCS#7 padding is removed to reveal the plaintext, #seq is saved in the ledger, and an ACK is sent back.",
+      "Safe AES-256-CBC Decryption: crypto.subtle.decrypt reverses Cipher Block Chaining across all 16-byte blocks using K_enc and the message's IV.",
+      "PKCS#7 Padding Removal: Web Crypto validates and strips the trailing padding bytes to recover the original UTF-8 payload.",
+      "Ledger Commitment: Sequence number #seq is permanently added to Bob's accepted ledger so future re-transmissions are blocked.",
+      "Delivery Acknowledgment (ACK): Bob sends an ack frame over WebSocket to notify Alice that her message was verified and delivered.",
     ],
   },
 ];
@@ -136,11 +143,11 @@ export default function ReceiverPipeline({ messageId }: { messageId: string }) {
       {step === 0 ? (
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[22px] font-normal text-ink">The parcel</h2>
-            <Badge tone="neutral">envelope</Badge>
+            <h2 className="text-[22px] font-normal text-ink">The parcel (Untrusted Arrival)</h2>
+            <Badge tone="neutral">Encrypt-then-MAC</Badge>
           </div>
           <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-soft">
-            It arrived locked and sealed. Bob can see the number and the wax, not the message.
+            Bob receives the opaque envelope over WebSocket marked &apos;Unverified&apos;. Under the Encrypt-then-MAC paradigm, ciphertext is treated as untrusted and held locked until its HMAC authentication tag is verified.
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             <Badge tone="neutral">{message.fromName}</Badge>
@@ -173,12 +180,11 @@ export default function ReceiverPipeline({ messageId }: { messageId: string }) {
       {step === 1 ? (
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[22px] font-normal text-ink">Bob makes his own seal</h2>
+            <h2 className="text-[22px] font-normal text-ink">Tag Recomputation (Bob&apos;s Seal)</h2>
             <Badge tone="neutral">HMAC-SHA256</Badge>
           </div>
           <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-soft">
-            He runs the same recipe over the box with his own copy of the key. Same box, same key: the pattern should
-            come out identical.
+            Practical 08: Bob reconstructs the canonical byte sequence (version ‖ seq ‖ IV ‖ ciphertext) and calculates what the 32-byte HMAC-SHA256 tag should be using his local copy of K_mac.
           </p>
 
           {checking || !check ? (
@@ -204,11 +210,11 @@ export default function ReceiverPipeline({ messageId }: { messageId: string }) {
       {step === 2 ? (
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[22px] font-normal text-ink">Two impressions, side by side</h2>
-            <Badge tone="neutral">comparison</Badge>
+            <h2 className="text-[22px] font-normal text-ink">Constant-Time Verification (Compare)</h2>
+            <Badge tone="neutral">Bitwise XOR</Badge>
           </div>
           <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-soft">
-            The two seals meet. If anything inside changed on the way, the patterns will not line up.
+            Bob compares the arrived tag with his recomputed tag across all 32 bytes in constant time. A bitwise XOR accumulator evaluates all bytes without early exit, eliminating timing side-channels and catching any 1-bit tamper.
           </p>
 
           {!check ? (
@@ -235,12 +241,11 @@ export default function ReceiverPipeline({ messageId }: { messageId: string }) {
       {step === 3 ? (
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[22px] font-normal text-ink">The ledger</h2>
-            <Badge tone="neutral">sequence number</Badge>
+            <h2 className="text-[22px] font-normal text-ink">Anti-Replay Ledger Check</h2>
+            <Badge tone="neutral">Sequence Ledger</Badge>
           </div>
           <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-soft">
-            Bob writes down every number he accepts. A number already in the ledger means someone has re-sent an old
-            parcel.
+            Because a replayed old message still carries a mathematically valid HMAC tag, Bob checks #seq against his accepted ledger. Any previously seen sequence number is immediately rejected as a replay attack.
           </p>
 
           {!replay ? (
@@ -260,11 +265,11 @@ export default function ReceiverPipeline({ messageId }: { messageId: string }) {
       {step === 4 ? (
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[22px] font-normal text-ink">The note again</h2>
-            <Badge tone="neutral">AES-256-CBC</Badge>
+            <h2 className="text-[22px] font-normal text-ink">Authenticated Decryption (AES-256-CBC)</h2>
+            <Badge tone="neutral">Practical 03</Badge>
           </div>
           <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-soft">
-            The seal matched, so the key is safe to use. The wrapping opens and the message is readable again.
+            With integrity, authenticity, and freshness verified, Bob decrypts the ciphertext using K_enc and the envelope&apos;s IV in AES-256-CBC mode, strips PKCS#7 padding, and reveals the original UTF-8 plaintext.
           </p>
 
           {decrypting ? (
