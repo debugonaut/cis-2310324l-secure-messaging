@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="Electron" agent="CIS-Diagram-Builder" version="24.0.0">
+  <diagram name="12 How Our App Uses AES-256-CBC &amp; Decryption" id="diag-1">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1180" pageHeight="520" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#1A73E8;strokeWidth=2;fontColor=#1F2326;fontSize=15;fontStyle=0;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="26" width="560" height="466" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="AES-256-CBC ENCRYPTION (Used in Our App)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1A73E8;strokeColor=#1A73E8;strokeWidth=2;fontColor=#FFFFFF;fontSize=15;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="26" width="560" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="Block 1&lt;br&gt;(16 B Data)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#36393C;strokeWidth=2;fontColor=#1F2326;fontSize=13;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="75" y="92" width="175" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="⊕  Random IV (16 B)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3D8;strokeColor=#D97706;strokeWidth=2;fontColor=#1F2326;fontSize=13;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="75" y="166" width="175" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="AES-256 Encrypt&lt;br&gt;(K_enc · 14 Rounds)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#36393C;strokeColor=#36393C;strokeWidth=2;fontColor=#FFFFFF;fontSize=13;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="75" y="240" width="175" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="Ciphertext Block 1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#1A73E8;strokeWidth=2;fontColor=#1F2326;fontSize=13;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="75" y="330" width="175" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="162" y="140" as="sourcePoint" />
+            <mxPoint x="162" y="166" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="162" y="212" as="sourcePoint" />
+            <mxPoint x="162" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="162" y="298" as="sourcePoint" />
+            <mxPoint x="162" y="330" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="11" value="Chain" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1A73E8;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="250" y="354" as="sourcePoint" />
+            <mxPoint x="355" y="189" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="305" y="354" />
+              <mxPoint x="305" y="189" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="12" value="Block 2 + PKCS#7 Pad" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#36393C;strokeWidth=2;fontColor=#1F2326;fontSize=13;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="355" y="92" width="210" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="⊕  Ciphertext Block 1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#1A73E8;strokeWidth=2;fontColor=#1F2326;fontSize=13;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="355" y="166" width="210" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="AES-256 Encrypt&lt;br&gt;(K_enc · 14 Rounds)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#36393C;strokeColor=#36393C;strokeWidth=2;fontColor=#FFFFFF;fontSize=13;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="355" y="240" width="210" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="Ciphertext Block 2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#1A73E8;strokeWidth=2;fontColor=#1F2326;fontSize=13;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="355" y="330" width="210" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="460" y="140" as="sourcePoint" />
+            <mxPoint x="460" y="166" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="460" y="212" as="sourcePoint" />
+            <mxPoint x="460" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="460" y="298" as="sourcePoint" />
+            <mxPoint x="460" y="330" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="19" value="Why CBC + Fresh IV? Sending &quot;Hello&quot; twice gives totally&lt;br&gt;different ciphertext! (Same IV is sent openly with ciphertext)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F4F5F7;strokeColor=#D0D5DD;strokeWidth=2;fontColor=#1E2226;fontSize=13;fontStyle=0;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="65" y="405" width="510" height="66" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#1E8E3E;strokeWidth=2;fontColor=#1F2326;fontSize=15;fontStyle=0;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="630" y="26" width="510" height="466" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="AES-256-CBC DECRYPTION (Reverse Order)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1E8E3E;strokeColor=#1E8E3E;strokeWidth=2;fontColor=#FFFFFF;fontSize=15;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="630" y="26" width="510" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="1. Inverse Rounds (Use Same K_enc backwards)&lt;br&gt;InvShiftRows ➔ InvSubBytes ➔ AddRoundKey ➔ InvMixColumns" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#36393C;strokeWidth=2;fontColor=#1F2326;fontSize=13;fontStyle=0;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="665" y="96" width="440" height="74" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1E8E3E;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="885" y="170" as="sourcePoint" />
+            <mxPoint x="885" y="198" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="24" value="2. Undo CBC XOR Chaining&lt;br&gt;Block 1 XORs back with Random IV  |  Block 2 XORs with CT Block 1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3D8;strokeColor=#D97706;strokeWidth=2;fontColor=#1F2326;fontSize=13;fontStyle=0;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="665" y="198" width="440" height="74" as="geometry" />
+        </mxCell>
+        <mxCell id="25" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1E8E3E;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="885" y="272" as="sourcePoint" />
+            <mxPoint x="885" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="26" value="3. Strip PKCS#7 Padding &amp; Decode UTF-8&lt;br&gt;Removes trailing pad bytes (e.g. 0x07 × 7) ➔ Original Plaintext!" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#1E8E3E;strokeWidth=2;fontColor=#1F2326;fontSize=13;fontStyle=0;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="665" y="300" width="440" height="74" as="geometry" />
+        </mxCell>
+        <mxCell id="27" value="In our app, Bob runs this ONLY AFTER HMAC-SHA256 verifies!" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE8E6;strokeColor=#C53929;strokeWidth=2;fontColor=#C53929;fontSize=13;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="665" y="405" width="440" height="66" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

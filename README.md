@@ -50,7 +50,7 @@ the receiver verifies the HMAC tag *before* decryption, preventing padding-oracl
 | **1. Conceptual Understanding of CIS** | `10` | `CO1` | CIA Triad & threat model in `/#/how` + PPT Slides 1–2, AES-CBC/HMAC working principles |
 | **2. Algorithm Implementation & Key Mgmt** | `8` | `CO2` | Web Crypto `AES-256-CBC` + 16B salt + PBKDF2 (`210k` rounds) splitting `K_enc` / `K_mac` + Fingerprint |
 | **3. Digital Signature & Message Auth** | `6` | `CO3` | `HMAC-SHA256` EtM gate, `constantTimeEqual()`, live `Tamper next message` 1-bit rejection |
-| **4. Integration, Demo, PPT & Q&A** | `6` | `CO1–3` | Practical 03 + 08 side-by-side wizards, `Replay last` detection, 11-slide `.pptx` & `/#/how` table |
+| **4. Integration, Demo, PPT & Q&A** | `6` | `CO1–3` | Practical 03 + 08 side-by-side wizards, `Replay last` detection, dedicated Practical 03 (`AES`) & 08 (`HMAC-SHA256`) PPTXs with Draw.io diagrams & `/#/how` table |
 
 ---
 
@@ -140,8 +140,13 @@ A standalone `/#/how` page (`How it works` / `About the project`) that explains:
 ├── tsconfig.json
 ├── package.json
 └── docs/
-    ├── Secure_Messaging_AES_HMAC.pptx  # 11-slide ESE PowerPoint deck
-    └── PRESENTATION.md                 # Companion slide script & viva notes
+    ├── Practical_03_AES.pptx           # 15-slide Practical 03 (AES) PPTX with Draw.io diagrams
+    ├── Practical_08_HMAC_SHA256.pptx   # 14-slide Practical 08 (HMAC-SHA256) PPTX with Draw.io diagrams
+    ├── Secure_Messaging_AES_HMAC.pptx  # 11-slide combined ESE overview deck
+    ├── PRESENTATION.md                 # Companion slide script & viva notes
+    └── diagrams/                       # Editable Draw.io (.drawio) source diagrams
+        ├── practical-03-aes/           # 12 AES step/matrix/key-expansion diagrams
+        └── practical-08-hmac/          # 11 HMAC RFC 2104 / EtM / replay diagrams
 ```
 
 ---

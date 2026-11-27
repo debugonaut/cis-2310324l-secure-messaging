@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="Electron" agent="CIS-Diagram-Builder" version="24.0.0">
+  <diagram name="07 Encryption Process: Three Round Phases" id="diag-1">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1180" pageHeight="520" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#36393C;strokeWidth=2;fontColor=#1F2326;fontSize=15;fontStyle=0;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="28" width="325" height="460" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="1. INITIAL ROUND (Pre-Round)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#36393C;strokeColor=#36393C;strokeWidth=2;fontColor=#FFFFFF;fontSize=15;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="28" width="325" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="Plaintext State (4×4)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#36393C;strokeWidth=2;fontColor=#1F2326;fontSize=14;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="92" y="102" width="220" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="ADD ROUND KEY&lt;br&gt;(XOR with Key 0)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#1A73E8;strokeWidth=2;fontColor=#1F2326;fontSize=14;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="92" y="212" width="220" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="To Main Rounds ➔" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F4F5F7;strokeColor=#36393C;strokeWidth=2;fontColor=#1F2326;fontSize=14;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="92" y="340" width="220" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="202" y="158" as="sourcePoint" />
+            <mxPoint x="202" y="212" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="202" y="276" as="sourcePoint" />
+            <mxPoint x="202" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="9" value="Only 1 step: mixes input&lt;br&gt;with original Key 0." style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;strokeWidth=0;fontColor=#5A626A;fontSize=13;fontStyle=0;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="55" y="418" width="295" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#D97706;strokeWidth=2;fontColor=#1F2326;fontSize=15;fontStyle=0;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="395" y="28" width="390" height="460" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="2. MAIN ROUNDS (Loop 9 or 13 times)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#D97706;strokeColor=#D97706;strokeWidth=2;fontColor=#FFFFFF;fontSize=15;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="395" y="28" width="390" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="1. SUB BYTES" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#1A73E8;strokeWidth=2;fontColor=#1F2326;fontSize=14;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="440" y="96" width="230" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="555" y="146" as="sourcePoint" />
+            <mxPoint x="555" y="170" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="14" value="2. SHIFT ROWS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3D8;strokeColor=#D97706;strokeWidth=2;fontColor=#1F2326;fontSize=14;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="440" y="170" width="230" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="555" y="220" as="sourcePoint" />
+            <mxPoint x="555" y="244" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="16" value="3. MIX COLUMNS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F4F5F7;strokeColor=#36393C;strokeWidth=2;fontColor=#1F2326;fontSize=14;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="440" y="244" width="230" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="555" y="294" as="sourcePoint" />
+            <mxPoint x="555" y="318" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="18" value="4. ADD ROUND KEY (Ki)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#1E8E3E;strokeWidth=2;fontColor=#1F2326;fontSize=14;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="440" y="318" width="230" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="19" value="Loop" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#D97706;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="555" y="368" as="sourcePoint" />
+            <mxPoint x="555" y="96" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="555" y="400" />
+              <mxPoint x="745" y="400" />
+              <mxPoint x="745" y="86" />
+              <mxPoint x="555" y="86" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="20" value="To Final Round ➔" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F4F5F7;strokeColor=#36393C;strokeWidth=2;fontColor=#1F2326;fontSize=13;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="440" y="418" width="230" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="555" y="368" as="sourcePoint" />
+            <mxPoint x="555" y="418" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="22" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#1E8E3E;strokeWidth=2;fontColor=#1F2326;fontSize=15;fontStyle=0;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="815" y="28" width="325" height="460" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="3. FINAL ROUND (Last Round)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1E8E3E;strokeColor=#1E8E3E;strokeWidth=2;fontColor=#FFFFFF;fontSize=15;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="815" y="28" width="325" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="24" value="1. SUB BYTES" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#1A73E8;strokeWidth=2;fontColor=#1F2326;fontSize=14;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="867" y="102" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="25" value="2. SHIFT ROWS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3D8;strokeColor=#D97706;strokeWidth=2;fontColor=#1F2326;fontSize=14;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="867" y="178" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="26" value="3. ADD ROUND KEY (Kr)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#1E8E3E;strokeWidth=2;fontColor=#1F2326;fontSize=14;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="867" y="254" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="27" value="CIPHERTEXT (128 Bits)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#36393C;strokeColor=#36393C;strokeWidth=2;fontColor=#FFFFFF;fontSize=15;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="857" y="344" width="240" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="977" y="152" as="sourcePoint" />
+            <mxPoint x="977" y="178" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="977" y="228" as="sourcePoint" />
+            <mxPoint x="977" y="254" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#36393C;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;startFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="977" y="304" as="sourcePoint" />
+            <mxPoint x="977" y="344" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="31" value="MixColumns is skipped here&lt;br&gt;so decryption stays clean!" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;strokeWidth=0;fontColor=#5A626A;fontSize=13;fontStyle=1;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="830" y="418" width="295" height="50" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
